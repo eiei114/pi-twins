@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 
 This project follows semantic versioning.
 
+## [0.1.1] - 2026-06-10
+
+### Fixed
+
+- Windows: fix `spawn EINVAL` error when invoking `pi.cmd` via `execFile` (Node.js v23+).
+  Now uses `cmd.exe /c pi` wrapper on win32 to avoid the batch-file spawn issue.
+
 ## [0.1.0] - 2026-06-10
 
 ### Added

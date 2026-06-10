@@ -2,7 +2,6 @@
 import { promisify } from "node:util";
 
 const execFileAsync = promisify(execFile);
-const PI_BIN = process.platform === "win32" ? "pi.cmd" : "pi";
 const MAX_BUFFER = 5 * 1024 * 1024;
 
 export interface TwinsRunResult {
@@ -20,7 +19,7 @@ async function runPiPrompt(
   cwd: string,
   signal?: AbortSignal,
 ): Promise<string> {
-  const args = [
+  const piArgs = [
     "-p",
     "--no-session",
     "--approve",
@@ -31,7 +30,13 @@ async function runPiPrompt(
     prompt,
   ];
 
-  const { stdout, stderr } = await execFileAsync(PI_BIN, args, {
+  // On Windows, execFile with .cmd batch files fails with EINVAL (Node.js v23+).
+  // Use cmd.exe /c wrapper instead.
+  const isWin = process.platform === "win32";
+  const bin = isWin ? "cmd.exe" : "pi";
+  const args = isWin ? ["/c", "pi", ...piArgs] : piArgs;
+
+  const { stdout, stderr } = await execFileAsync(bin, args, {
     cwd,
     windowsHide: true,
     maxBuffer: MAX_BUFFER,
