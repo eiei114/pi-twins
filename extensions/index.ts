@@ -2,7 +2,8 @@
 import { Type } from "typebox";
 import { configExists, getConfigPath, loadConfig, writeDefaultConfig } from "../lib/config.ts";
 import { groupByProvider } from "../lib/scanner.ts";
-import { formatTwinsMarkdown, runTwins } from "../lib/runner.ts";
+import { DEFAULT_PAIR_NAME } from "../lib/schema.ts";
+import { formatTwinsMarkdown, runTwins, type TwinsRunProgress } from "../lib/runner.ts";
 
 async function ensureConfig(ctx: ExtensionCommandContext): Promise<boolean> {
   if (configExists()) return true;
@@ -21,10 +22,16 @@ async function choosePair(ctx: ExtensionCommandContext): Promise<[string, string
   const config = loadConfig();
   const names = Object.keys(config.pairs);
   if (names.length === 0) throw new Error("No pairs found in ~/.pi/twins.yaml");
-  if (names.length === 1) return config.pairs[names[0]];
-  const selected = await ctx.ui.select("Choose pi-twins pair", names);
-  if (!selected) return undefined;
-  return config.pairs[selected];
+
+  const pairName = config.pairs[DEFAULT_PAIR_NAME]
+    ? DEFAULT_PAIR_NAME
+    : names[0];
+
+  if (names.length > 1) {
+    ctx.ui.notify(`Using pi-twins pair: ${pairName}`, "info");
+  }
+
+  return config.pairs[pairName];
 }
 
 export default function (pi: ExtensionAPI) {
@@ -68,9 +75,15 @@ export default function (pi: ExtensionAPI) {
 
         ctx.ui.setStatus("twins", `Running ${pair[0]} + ${pair[1]}...`);
         ctx.ui.setWorkingVisible(true);
-        ctx.ui.setWorkingMessage("Running pi-twins...");
+        ctx.ui.setWorkingMessage("Thinking... starting pi-twins...");
 
-        const result = await runTwins(prompt.trim(), pair, ctx.cwd, ctx.signal);
+        const showProgress = (progress: TwinsRunProgress) => {
+          ctx.ui.setWorkingVisible(true);
+          ctx.ui.setWorkingMessage(`Thinking... ${progress.message}`);
+          ctx.ui.setStatus("twins", progress.message);
+        };
+
+        const result = await runTwins(prompt.trim(), pair, ctx.cwd, ctx.signal, showProgress);
         pi.sendMessage({
           customType: "twins",
           content: formatTwinsMarkdown(result),

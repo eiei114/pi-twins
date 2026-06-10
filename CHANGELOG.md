@@ -4,6 +4,20 @@ All notable changes to this project will be documented in this file.
 
 This project follows semantic versioning.
 
+## [0.1.4] - 2026-06-10
+
+### Changed
+
+- `/twins:run`: show thinking/progress-style status while waiting on model responses and synthesis.
+  The command now updates working/status text for start, dual-model execution, synthesis, and completion.
+
+## [0.1.3] - 2026-06-10
+
+### Fixed
+
+- `/twins:run`: stop hanging after prompt entry when multiple pairs exist in `~/.pi/twins.yaml`.
+  The command now auto-selects the `default` pair when present, otherwise the first configured pair, instead of opening a second UI selection step.
+
 ## [0.1.2] - 2026-06-10
 
 ### Fixed

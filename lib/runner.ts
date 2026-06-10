@@ -12,6 +12,11 @@ export interface TwinsRunResult {
   synthesis: string;
 }
 
+export interface TwinsRunProgress {
+  phase: "starting" | "models" | "synthesis" | "done";
+  message: string;
+}
+
 function stripControlSequences(text: string): string {
   return text
     .replace(/\u001b\[[0-9;?]*[ -/]*[@-~]/g, "")
@@ -145,14 +150,36 @@ export async function runTwins(
   pair: readonly [string, string],
   cwd: string,
   signal?: AbortSignal,
+  onProgress?: (progress: TwinsRunProgress) => void,
 ): Promise<TwinsRunResult> {
   const [modelA, modelB] = pair;
+
+  onProgress?.({
+    phase: "starting",
+    message: `Starting twin run with ${modelA} + ${modelB}...`,
+  });
+
+  onProgress?.({
+    phase: "models",
+    message: `Asking both models: ${modelA} + ${modelB}`,
+  });
+
   const [responseA, responseB] = await Promise.all([
     runPiPrompt(modelA, prompt, cwd, signal),
     runPiPrompt(modelB, prompt, cwd, signal),
   ]);
 
+  onProgress?.({
+    phase: "synthesis",
+    message: `Synthesizing responses with ${modelA}...`,
+  });
+
   const synthesis = await runPiPrompt(modelA, synthesisPrompt(prompt, modelA, responseA, modelB, responseB), cwd, signal);
+
+  onProgress?.({
+    phase: "done",
+    message: "Twin run complete.",
+  });
 
   return {
     modelA,
