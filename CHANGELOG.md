@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 
 This project follows semantic versioning.
 
+## [0.1.2] - 2026-06-10
+
+### Fixed
+
+- Windows: fix child `pi -p` hangs when run from Node child processes.
+  `execFile(...)` kept stdin piped, and child Pi could hang after producing output.
+  `pi-twins` now uses `spawn(...)` with stdin ignored, adds a 120s timeout, and strips focus-control escape sequences from stderr.
+
 ## [0.1.1] - 2026-06-10
 
 ### Fixed
