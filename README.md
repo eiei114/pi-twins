@@ -1,62 +1,45 @@
-# PACKAGE_DISPLAY_NAME
+# pi-twins
 
-[![CI](https://github.com/OWNER/REPO/actions/workflows/ci.yml/badge.svg)](https://github.com/OWNER/REPO/actions/workflows/ci.yml)
-[![Publish](https://github.com/OWNER/REPO/actions/workflows/publish.yml/badge.svg)](https://github.com/OWNER/REPO/actions/workflows/publish.yml)
-[![npm version](https://img.shields.io/npm/v/PACKAGE_NAME.svg)](https://www.npmjs.com/package/PACKAGE_NAME)
-[![npm downloads](https://img.shields.io/npm/dm/PACKAGE_NAME.svg)](https://www.npmjs.com/package/PACKAGE_NAME)
+[![CI](https://github.com/eiei114/pi-twins/actions/workflows/ci.yml/badge.svg)](https://github.com/eiei114/pi-twins/actions/workflows/ci.yml)
+[![Publish](https://github.com/eiei114/pi-twins/actions/workflows/publish.yml/badge.svg)](https://github.com/eiei114/pi-twins/actions/workflows/publish.yml)
+[![npm version](https://img.shields.io/npm/v/pi-twins.svg)](https://www.npmjs.com/package/pi-twins)
+[![npm downloads](https://img.shields.io/npm/dm/pi-twins.svg)](https://www.npmjs.com/package/pi-twins)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Pi package](https://img.shields.io/badge/pi-package-purple.svg)](https://pi.dev/packages)
 [![Trusted Publishing](https://img.shields.io/badge/npm-Trusted%20Publishing-blue.svg)](docs/release.md)
 
-> One-line pitch for this TypeScript-first Pi package.
+> Run the same prompt on two models, get one synthesized answer.
 
 ## What this is
 
-Briefly explain what this TypeScript-first package adds to Pi and who should use it.
+pi-twins sends your prompt to two AI models in parallel, then Pi itself reads both responses and synthesizes a single answer from the best parts. Configure model pairs via YAML. No more manually tabbing between chatbot UIs to compare answers.
 
 ## Features
 
-- Feature 1
-- Feature 2
-- Feature 3
+- **Dual-model execution** — run the same prompt on two models simultaneously
+- **Automatic synthesis** — Pi reads both responses and produces one unified answer
+- **YAML configuration** — define model pairs (e.g. Claude + Gemini) in `~/.pi/twins.yaml`
+- **Model discovery** — `/twins:scan` to see which models are available
+- **On-demand only** — activate via `/twins` when you want it, no overhead otherwise
 
 ## Install
 
 Install the published npm package with Pi:
 
 ```bash
-pi install npm:PACKAGE_NAME
+pi install npm:pi-twins
 ```
 
-Replace `PACKAGE_NAME` with the exact `name` from `package.json`.
-For a scoped npm package, keep the `npm:` prefix:
+Pin a specific version:
 
 ```bash
-pi install npm:@your-scope/your-pi-package
-```
-
-Pin a specific version when you want reproducible installs:
-
-```bash
-pi install npm:PACKAGE_NAME@0.1.0
-```
-
-Install into the current project instead of your user Pi settings:
-
-```bash
-pi install npm:PACKAGE_NAME -l
-```
-
-Or install from GitHub:
-
-```bash
-pi install git:github.com/OWNER/REPO
+pi install npm:pi-twins@0.1.0
 ```
 
 Try it without permanently installing:
 
 ```bash
-pi -e npm:PACKAGE_NAME
+pi -e npm:pi-twins
 ```
 
 ## Quick start
@@ -70,8 +53,29 @@ pi -e .
 Then run:
 
 ```txt
-/your-command
+/twins "What are the tradeoffs between SQLite and PostgreSQL for my use case?"
 ```
+
+## Configuration
+
+Create `~/.pi/twins.yaml`:
+
+```yaml
+pairs:
+  default:
+    - anthropic/claude-sonnet-4
+    - google/gemini-2.5-pro
+  coding:
+    - anthropic/claude-sonnet-4
+    - openai/gpt-4o
+```
+
+## Commands
+
+/twins:run — 2モデルに同じプロンプトを投げて統合回答を得る（プロンプトは実行後に入力）
+/twins:scan — 利用可能なモデル一覧を表示
+
+引数は不要。詳細は各コマンド実行後のプロンプト
 
 ## Package contents
 
@@ -127,8 +131,7 @@ See [`docs/release.md`](docs/release.md) for setup details.
 
 After creating a repository from this template:
 
-1. Follow [`docs/template-checklist.md`](docs/template-checklist.md) for setup.
-2. Run the **post-generation docs cleanup** in that checklist: delete or merge template bootstrap docs that no longer add project value.
+1. Delete or merge template bootstrap docs that no longer add project value.
 
 Useful docs to keep when they add value:
 
@@ -154,9 +157,9 @@ For vulnerability reporting, see [`SECURITY.md`](SECURITY.md).
 
 ## Links
 
-- npm: https://www.npmjs.com/package/PACKAGE_NAME
-- GitHub: https://github.com/OWNER/REPO
-- Issues: https://github.com/OWNER/REPO/issues
+- npm: https://www.npmjs.com/package/pi-twins
+- GitHub: https://github.com/eiei114/pi-twins
+- Issues: https://github.com/eiei114/pi-twins/issues
 
 ## License
 
