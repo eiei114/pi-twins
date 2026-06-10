@@ -48,9 +48,6 @@
     ],
     "prompts": [
       "./prompts"
-    ],
-    "themes": [
-      "./themes"
     ]
   },
   "publishConfig": {

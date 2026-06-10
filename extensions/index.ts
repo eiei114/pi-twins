@@ -10,7 +10,14 @@ import { StringEnum } from "../lib/schema.ts";
 interface TwinsState {
   prompt: string;
   pair: [string, string];
-  step: 0 | 1 | 2; // 0=modelA, 1=modelB, 2=synthesis
+  /**
+   * phase counter advanced on each agent_end:
+   * 0=command ran (modelA prompt queued)
+   * 1=modelA responded → ready to switch to modelB
+   * 2=modelB responded → ready to synthesize
+   * 3=synthesis done → clear
+   */
+  phase: number;
   startedAt: number;
 }
 
@@ -112,15 +119,15 @@ export default function (pi: ExtensionAPI) {
         return;
       }
 
-      // Initialize state
-      twinsState = { prompt, pair, step: 0, startedAt: Date.now() };
+      // Initialize state — phase 0: command ran, modelA prompt queued via followUp
+      twinsState = { prompt, pair, phase: 0, startedAt: Date.now() };
       ctx.ui.setStatus("twins", `Step 1/3: Asking ${pair[0]}...`);
 
       // Try to switch to model A
       await trySwitchModel(pair[0], pi, ctx as any);
 
-      // Queue the user's prompt as a user message
-      pi.sendUserMessage(prompt);
+      // Queue the user's prompt after current turn
+      pi.sendUserMessage(prompt, { deliverAs: "followUp" });
     },
   });
 
@@ -129,7 +136,7 @@ export default function (pi: ExtensionAPI) {
     const state = twinsState;
     if (!state) return;
 
-    // Stale guard: clear if session is too old
+    // Stale guard
     if (Date.now() - state.startedAt > STALE_TIMEOUT_MS) {
       twinsState = null;
       ctx.ui.setStatus("twins", "");
@@ -137,22 +144,32 @@ export default function (pi: ExtensionAPI) {
     }
 
     try {
-      if (state.step === 0) {
-        // Step 1 done (model A responded). Now run model B.
-        state.step = 1;
+      const p = state.phase;
+
+      // phase 0: command turn finished, modelA prompt is queued — just advance
+      // phase 1: modelA responded → switch to modelB, queue prompt
+      // phase 2: modelB responded → queue synthesis
+      // phase 3: synthesis done → clear
+
+      if (p === 1) {
+        state.phase = 2;
         ctx.ui.setStatus("twins", `Step 2/3: Asking ${state.pair[1]}...`);
         await trySwitchModel(state.pair[1], pi, ctx as any);
-        pi.sendUserMessage(state.prompt);
-      } else if (state.step === 1) {
-        // Step 2 done (model B responded). Now synthesize.
-        state.step = 2;
+        pi.sendUserMessage(state.prompt, { deliverAs: "followUp" });
+      } else if (p === 2) {
+        state.phase = 3;
         ctx.ui.setStatus("twins", "Step 3/3: Synthesizing...");
-        pi.sendUserMessage("Look at the two previous answers. Synthesize them into one coherent answer. Keep the model names visible so the user knows which insights came from which model.");
-      } else if (state.step === 2) {
-        // Synthesis done.
+        pi.sendUserMessage(
+          "Look at the two previous answers. Synthesize them into one coherent answer. Keep the model names visible so the user knows which insights came from which model.",
+          { deliverAs: "followUp" },
+        );
+      } else if (p === 3) {
         twinsState = null;
         ctx.ui.setStatus("twins", "");
         ctx.ui.notify("pi-twins: All done! Responses from both models synthesized above.", "info");
+      } else if (p === 0) {
+        // First agent_end after command — modelA prompt is queued next
+        state.phase = 1;
       }
     } catch (err) {
       twinsState = null;
