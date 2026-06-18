@@ -1,73 +1,107 @@
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from "node:fs";
 import { homedir } from "node:os";
-import { join } from "node:path";
+import { join, dirname } from "node:path";
 import { parse } from "yaml";
-import type { TwinsConfig } from "./schema.ts";
-import { DEFAULT_CONFIG, DEFAULT_PAIR_NAME } from "./schema.ts";
+import { Check } from "typebox/schema";
+import {
+  TwinsConfigSchema,
+  type TwinsConfig,
+  DEFAULT_PAIR_NAME,
+} from "./schema.ts";
 
-const CONFIG_DIR = join(homedir(), ".pi");
-const CONFIG_PATH = join(CONFIG_DIR, "twins.yaml");
+const DEFAULT_CONFIG_DIR = join(homedir(), ".pi");
+const DEFAULT_CONFIG_PATH = join(DEFAULT_CONFIG_DIR, "twins.yaml");
 
-/** Read and parse twins config. Returns default config if file doesn't exist. */
-export function loadConfig(): TwinsConfig {
-  if (!existsSync(CONFIG_PATH)) {
-    return { ...DEFAULT_CONFIG, pairs: { ...DEFAULT_CONFIG.pairs } };
-  }
+export class ConfigNotFoundError extends Error {
+  readonly configPath: string;
 
-  try {
-    const raw = readFileSync(CONFIG_PATH, "utf-8");
-    const parsed = parse(raw);
-
-    if (!parsed || typeof parsed !== "object") {
-      throw new Error("Config file must contain a YAML object");
-    }
-
-    const pairs = parsed.pairs;
-    if (!pairs || typeof pairs !== "object") {
-      throw new Error('Config must have a "pairs" key with model pair definitions');
-    }
-
-    const result: TwinsConfig = { pairs: {} };
-
-    for (const [name, models] of Object.entries(pairs)) {
-      if (!Array.isArray(models) || models.length < 2) {
-        throw new Error(`Pair "${name}" must have at least 2 model identifiers`);
-      }
-      result.pairs[name] = [String(models[0]), String(models[1])];
-    }
-
-    return result;
-  } catch (err) {
-    const msg = err instanceof Error ? err.message : String(err);
-    throw new Error(`Failed to load ${CONFIG_PATH}: ${msg}`);
+  constructor(configPath: string) {
+    super(formatConfigNotFoundMessage(configPath));
+    this.name = "ConfigNotFoundError";
+    this.configPath = configPath;
   }
 }
 
+function formatConfigNotFoundMessage(configPath: string): string {
+  return [
+    `pi-twins config not found at ${configPath}`,
+    "",
+    "Create ~/.pi/twins.yaml with model pairs, or run /twins:config to generate a template.",
+    "Run /twins:scan to see available model IDs.",
+    "",
+    "Example:",
+    "pairs:",
+    "  default:",
+    "    - anthropic/claude-sonnet-4",
+    "    - google/gemini-2.5-pro",
+  ].join("\n");
+}
+
+function formatValidationError(configPath: string, detail: string): string {
+  return `Invalid pi-twins config at ${configPath}: ${detail}`;
+}
+
+function resolveConfigPath(configPath?: string): string {
+  return configPath ?? DEFAULT_CONFIG_PATH;
+}
+
+/** Read and validate twins config from ~/.pi/twins.yaml (or an override path). */
+export function loadConfig(configPath?: string): TwinsConfig {
+  const path = resolveConfigPath(configPath);
+
+  if (!existsSync(path)) {
+    throw new ConfigNotFoundError(path);
+  }
+
+  let parsed: unknown;
+  try {
+    const raw = readFileSync(path, "utf-8");
+    parsed = parse(raw);
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    throw new Error(formatValidationError(path, `failed to parse YAML: ${msg}`));
+  }
+
+  if (!Check(TwinsConfigSchema, parsed)) {
+    throw new Error(
+      formatValidationError(
+        path,
+        'expected a "pairs" object mapping names to [modelA, modelB] tuples',
+      ),
+    );
+  }
+
+  return parsed;
+}
+
 /** Get a specific pair by name, falling back to default. */
-export function getPair(pairName?: string): [string, string] {
-  const config = loadConfig();
+export function getPair(pairName?: string, configPath?: string): [string, string] {
+  const config = loadConfig(configPath);
   const name = pairName || DEFAULT_PAIR_NAME;
   const pair = config.pairs[name];
   if (!pair) {
-    throw new Error(`Pair "${name}" not found in config. Available: ${Object.keys(config.pairs).join(", ")}`);
+    throw new Error(
+      `Pair "${name}" not found in config. Available: ${Object.keys(config.pairs).join(", ")}`,
+    );
   }
   return pair;
 }
 
 /** Check if config file exists. */
-export function configExists(): boolean {
-  return existsSync(CONFIG_PATH);
+export function configExists(configPath?: string): boolean {
+  return existsSync(resolveConfigPath(configPath));
 }
 
 /** Get config file path for display. */
-export function getConfigPath(): string {
-  return CONFIG_PATH;
+export function getConfigPath(configPath?: string): string {
+  return resolveConfigPath(configPath);
 }
 
 /** Create default config file with a template. */
-export function writeDefaultConfig(): void {
-  if (!existsSync(CONFIG_DIR)) {
-    mkdirSync(CONFIG_DIR, { recursive: true });
+export function writeDefaultConfig(configPath: string = DEFAULT_CONFIG_PATH): void {
+  const dir = dirname(configPath);
+  if (!existsSync(dir)) {
+    mkdirSync(dir, { recursive: true });
   }
 
   const template = `# pi-twins configuration
@@ -81,5 +115,5 @@ pairs:
     - openai/gpt-4o
 `;
 
-  writeFileSync(CONFIG_PATH, template, "utf-8");
+  writeFileSync(configPath, template, "utf-8");
 }

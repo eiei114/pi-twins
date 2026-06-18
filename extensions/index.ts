@@ -1,8 +1,7 @@
 ﻿import type { ExtensionAPI, ExtensionCommandContext } from "@earendil-works/pi-coding-agent";
-import { Type } from "typebox";
 import { configExists, getConfigPath, loadConfig, writeDefaultConfig } from "../lib/config.ts";
 import { groupByProvider } from "../lib/scanner.ts";
-import { DEFAULT_PAIR_NAME } from "../lib/schema.ts";
+import { DEFAULT_PAIR_NAME, TwinsRunToolParametersSchema } from "../lib/schema.ts";
 import { formatTwinsMarkdown, runTwins, type TwinsRunProgress } from "../lib/runner.ts";
 
 async function ensureConfig(ctx: ExtensionCommandContext): Promise<boolean> {
@@ -112,10 +111,7 @@ export default function (pi: ExtensionAPI) {
       "The pair name comes from ~/.pi/twins.yaml.",
       "Returns both raw model responses and the final synthesis.",
     ],
-    parameters: Type.Object({
-      prompt: Type.String({ description: "The question or task to ask both models" }),
-      pair: Type.Optional(Type.String({ description: "Pair name from ~/.pi/twins.yaml (defaults to first pair)" })),
-    }),
+    parameters: TwinsRunToolParametersSchema,
     async execute(_toolCallId, params, signal, _onUpdate, ctx) {
       try {
         const config = loadConfig();
