@@ -1,8 +1,14 @@
-﻿import type { ExtensionAPI, ExtensionCommandContext } from "@earendil-works/pi-coding-agent";
+import type { ExtensionAPI, ExtensionCommandContext } from "@earendil-works/pi-coding-agent";
 import { configExists, getConfigPath, loadConfig, writeDefaultConfig } from "../lib/config.ts";
+import {
+  buildSynthesisPrompt,
+  formatResponsesMarkdown,
+  formatTwinsMarkdown,
+  runTwins,
+  synthesizeResponses,
+} from "../lib/runner.ts";
 import { groupByProvider } from "../lib/scanner.ts";
 import { DEFAULT_PAIR_NAME, TwinsRunToolParametersSchema } from "../lib/schema.ts";
-import { formatTwinsMarkdown, runTwins, type TwinsRunProgress } from "../lib/runner.ts";
 
 async function ensureConfig(ctx: ExtensionCommandContext): Promise<boolean> {
   if (configExists()) return true;
@@ -17,20 +23,19 @@ async function ensureConfig(ctx: ExtensionCommandContext): Promise<boolean> {
   return true;
 }
 
-async function choosePair(ctx: ExtensionCommandContext): Promise<[string, string] | undefined> {
+function resolvePair(pairName?: string): [string, string] {
   const config = loadConfig();
   const names = Object.keys(config.pairs);
   if (names.length === 0) throw new Error("No pairs found in ~/.pi/twins.yaml");
 
-  const pairName = config.pairs[DEFAULT_PAIR_NAME]
-    ? DEFAULT_PAIR_NAME
-    : names[0];
+  const resolvedName =
+    pairName && config.pairs[pairName]
+      ? pairName
+      : config.pairs[DEFAULT_PAIR_NAME]
+        ? DEFAULT_PAIR_NAME
+        : names[0];
 
-  if (names.length > 1) {
-    ctx.ui.notify(`Using pi-twins pair: ${pairName}`, "info");
-  }
-
-  return config.pairs[pairName];
+  return config.pairs[resolvedName];
 }
 
 export default function (pi: ExtensionAPI) {
@@ -51,12 +56,22 @@ export default function (pi: ExtensionAPI) {
 
   pi.registerCommand("twins:config", {
     description: "Create or show the pi-twins configuration file",
-    handler: async (_args, ctx) => {
+    handler: async (_args, _ctx) => {
       if (configExists()) {
-        pi.sendMessage({ customType: "twins", content: `Config exists at: ${getConfigPath()}`, display: true, details: { kind: "config" } });
+        pi.sendMessage({
+          customType: "twins",
+          content: `Config exists at: ${getConfigPath()}`,
+          display: true,
+          details: { kind: "config" },
+        });
       } else {
         writeDefaultConfig();
-        pi.sendMessage({ customType: "twins", content: `Created default config at: ${getConfigPath()}`, display: true, details: { kind: "config" } });
+        pi.sendMessage({
+          customType: "twins",
+          content: `Created default config at: ${getConfigPath()}`,
+          display: true,
+          details: { kind: "config" },
+        });
       }
     },
   });
@@ -67,32 +82,65 @@ export default function (pi: ExtensionAPI) {
       try {
         const ok = await ensureConfig(ctx);
         if (!ok) return;
+
         const prompt = await ctx.ui.input("What would you like to ask both models?", "");
         if (!prompt?.trim()) return;
-        const pair = await choosePair(ctx);
-        if (!pair) return;
+
+        const config = loadConfig();
+        const pair = resolvePair();
+        const pairNames = Object.keys(config.pairs);
+        if (pairNames.length > 1) {
+          const usedName =
+            config.pairs[DEFAULT_PAIR_NAME] && pair === config.pairs[DEFAULT_PAIR_NAME]
+              ? DEFAULT_PAIR_NAME
+              : pairNames.find((name) => config.pairs[name] === pair) ?? pairNames[0];
+          ctx.ui.notify(`Using pi-twins pair: ${usedName}`, "info");
+        }
 
         ctx.ui.setStatus("twins", `Running ${pair[0]} + ${pair[1]}...`);
         ctx.ui.setWorkingVisible(true);
-        ctx.ui.setWorkingMessage("Thinking... starting pi-twins...");
+        ctx.ui.setWorkingMessage(`Thinking... asking ${pair[0]} + ${pair[1]} in parallel`);
 
-        const showProgress = (progress: TwinsRunProgress) => {
-          ctx.ui.setWorkingVisible(true);
-          ctx.ui.setWorkingMessage(`Thinking... ${progress.message}`);
-          ctx.ui.setStatus("twins", progress.message);
-        };
+        const result = await runTwins(prompt.trim(), pair, ctx.modelRegistry, { signal: ctx.signal });
 
-        const result = await runTwins(prompt.trim(), pair, ctx.cwd, ctx.signal, showProgress);
+        if (!result.responseA && !result.responseB) {
+          throw new Error(
+            [
+              result.errorA ? `${result.modelA}: ${result.errorA}` : undefined,
+              result.errorB ? `${result.modelB}: ${result.errorB}` : undefined,
+            ]
+              .filter(Boolean)
+              .join("; ") || "Both models failed",
+          );
+        }
+
         pi.sendMessage({
           customType: "twins",
-          content: formatTwinsMarkdown(result),
+          content: formatResponsesMarkdown(result),
           display: true,
-          details: { kind: "run", pair },
+          details: { kind: "run", pair, phase: "responses" },
+        });
+
+        ctx.ui.setWorkingMessage("Thinking... synthesizing the best parts");
+        ctx.ui.setStatus("twins", "Synthesizing responses...");
+
+        await pi.sendUserMessage(buildSynthesisPrompt(result), { deliverAs: "followUp" });
+
+        pi.sendMessage({
+          customType: "twins",
+          content: "完了",
+          display: true,
+          details: { kind: "run", pair, phase: "done" },
         });
       } catch (error) {
         const message = error instanceof Error ? error.message : String(error);
         ctx.ui.notify(`pi-twins error: ${message}`, "error");
-        pi.sendMessage({ customType: "twins", content: `pi-twins error: ${message}`, display: true, details: { kind: "error", error: true } });
+        pi.sendMessage({
+          customType: "twins",
+          content: `pi-twins error: ${message}`,
+          display: true,
+          details: { kind: "error", error: true },
+        });
       } finally {
         ctx.ui.setStatus("twins", "");
         ctx.ui.setWorkingVisible(false);
@@ -114,15 +162,17 @@ export default function (pi: ExtensionAPI) {
     parameters: TwinsRunToolParametersSchema,
     async execute(_toolCallId, params, signal, _onUpdate, ctx) {
       try {
-        const config = loadConfig();
-        const names = Object.keys(config.pairs);
-        if (names.length === 0) throw new Error("No pairs found in ~/.pi/twins.yaml");
-        const pairName = params.pair && config.pairs[params.pair] ? params.pair : names[0];
-        const pair = config.pairs[pairName];
-        const result = await runTwins(params.prompt, pair, ctx.cwd, signal);
+        const pair = resolvePair(params.pair);
+
+        const result = await runTwins(params.prompt, pair, ctx.modelRegistry, { signal });
+        if (!result.responseA && !result.responseB) {
+          throw new Error("Both models failed");
+        }
+
+        const synthesis = await synthesizeResponses(result, ctx.modelRegistry, pair[0], signal);
         return {
-          content: [{ type: "text", text: formatTwinsMarkdown(result) }],
-          details: { pairName, pair, modelA: result.modelA, modelB: result.modelB },
+          content: [{ type: "text", text: formatTwinsMarkdown(result, synthesis) }],
+          details: { pair, modelA: result.modelA, modelB: result.modelB },
         } as any;
       } catch (error) {
         const message = error instanceof Error ? error.message : String(error);
@@ -135,4 +185,3 @@ export default function (pi: ExtensionAPI) {
     },
   });
 }
-
