@@ -1,210 +1,214 @@
-import { spawn } from "node:child_process";
+import {
+  completeSimple,
+  type Api,
+  type Model,
+  type UserMessage,
+} from "@earendil-works/pi-ai";
 
-const MAX_BUFFER = 5 * 1024 * 1024;
-const CHILD_TIMEOUT_MS = 120_000;
+export interface TwinsModelRegistry {
+  find(provider: string, modelId: string): Model<Api> | undefined;
+  getApiKeyAndHeaders(model: Model<Api>): Promise<
+    | { ok: true; apiKey?: string; headers?: Record<string, string> }
+    | { ok: false; error: string }
+  >;
+}
+
+export interface ModelRunResult {
+  model: string;
+  response?: string;
+  error?: string;
+}
 
 export interface TwinsRunResult {
   modelA: string;
   modelB: string;
   prompt: string;
-  responseA: string;
-  responseB: string;
-  synthesis: string;
+  responseA?: string;
+  responseB?: string;
+  errorA?: string;
+  errorB?: string;
 }
 
-export interface TwinsRunProgress {
-  phase: "starting" | "models" | "synthesis" | "done";
-  message: string;
+export interface RunModelOptions {
+  signal?: AbortSignal;
+  runModel?: (fullId: string, prompt: string, registry: TwinsModelRegistry, signal?: AbortSignal) => Promise<ModelRunResult>;
 }
 
-function stripControlSequences(text: string): string {
-  return text
-    .replace(/\u001b\[[0-9;?]*[ -/]*[@-~]/g, "")
-    .replace(/\r/g, "");
+function splitModelId(fullId: string): [string, string] {
+  const idx = fullId.indexOf("/");
+  if (idx === -1) {
+    throw new Error(`Invalid model id "${fullId}" (expected provider/model-id)`);
+  }
+  return [fullId.slice(0, idx), fullId.slice(idx + 1)];
 }
 
-async function runPiPrompt(
-  model: string,
+function extractText(content: Array<{ type: string; text?: string }>): string {
+  return content
+    .filter((part): part is { type: "text"; text: string } => part.type === "text" && typeof part.text === "string")
+    .map((part) => part.text)
+    .join("\n")
+    .trim();
+}
+
+export async function runSingleModel(
+  fullId: string,
   prompt: string,
-  cwd: string,
+  registry: TwinsModelRegistry,
   signal?: AbortSignal,
-): Promise<string> {
-  const piArgs = [
-    "-p",
-    "--no-session",
-    "--approve",
-    "--model",
-    model,
-    "--exclude-tools",
-    "twins_run",
-    prompt,
-  ];
+): Promise<ModelRunResult> {
+  let provider: string;
+  let modelId: string;
 
-  // On Windows, execFile with .cmd batch files fails with EINVAL (Node.js v23+).
-  // Also keep stdin ignored: piping stdin makes child `pi -p` hang after producing output.
-  const isWin = process.platform === "win32";
-  const bin = isWin ? "cmd.exe" : "pi";
-  const args = isWin ? ["/c", "pi", ...piArgs] : piArgs;
+  try {
+    [provider, modelId] = splitModelId(fullId);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    return { model: fullId, error: message };
+  }
 
-  return await new Promise<string>((resolve, reject) => {
-    let settled = false;
-    let stdout = "";
-    let stderr = "";
-    let timeoutId: ReturnType<typeof setTimeout> | undefined;
+  const model = registry.find(provider, modelId);
+  if (!model) {
+    return { model: fullId, error: `Model not found: ${fullId}` };
+  }
 
-    const child = spawn(bin, args, {
-      cwd,
-      windowsHide: true,
-      stdio: ["ignore", "pipe", "pipe"],
-    });
-
-    let abortHandler: (() => void) | undefined;
-
-    const settle = (fn: () => void) => {
-      if (settled) return;
-      settled = true;
-      if (timeoutId) clearTimeout(timeoutId);
-      if (signal && abortHandler) signal.removeEventListener("abort", abortHandler);
-      fn();
-    };
-
-    const fail = (message: string) => settle(() => reject(new Error(message)));
-
-    if (signal?.aborted) {
-      child.kill("SIGTERM");
-      return fail("pi-twins run aborted");
+  try {
+    const auth = await registry.getApiKeyAndHeaders(model);
+    if (!auth.ok) {
+      return { model: fullId, error: auth.error };
     }
 
-    abortHandler = () => {
-      child.kill("SIGTERM");
-      fail("pi-twins run aborted");
+    const userMessage: UserMessage = {
+      role: "user",
+      content: [{ type: "text", text: prompt }],
+      timestamp: Date.now(),
     };
 
-    if (signal) signal.addEventListener("abort", abortHandler, { once: true });
+    const response = await completeSimple(
+      model,
+      {
+        systemPrompt: "You are a helpful assistant. Answer the user's question directly.",
+        messages: [userMessage],
+      },
+      {
+        apiKey: auth.apiKey,
+        headers: auth.headers,
+        signal,
+      },
+    );
 
-    timeoutId = setTimeout(() => {
-      child.kill("SIGTERM");
-      setTimeout(() => child.kill("SIGKILL"), 5_000).unref();
-      fail(`Timed out waiting for model ${model} after ${Math.round(CHILD_TIMEOUT_MS / 1000)}s`);
-    }, CHILD_TIMEOUT_MS);
+    if (response.stopReason === "aborted") {
+      return { model: fullId, error: "Request aborted" };
+    }
 
-    child.stdout?.setEncoding("utf8");
-    child.stderr?.setEncoding("utf8");
+    const text = extractText(response.content);
+    if (!text) {
+      return { model: fullId, error: `No text response from model ${fullId}` };
+    }
 
-    child.stdout?.on("data", (chunk: string) => {
-      stdout += chunk;
-      if (Buffer.byteLength(stdout, "utf8") > MAX_BUFFER) {
-        child.kill("SIGTERM");
-        fail(`Output from model ${model} exceeded ${MAX_BUFFER} bytes`);
-      }
-    });
-
-    child.stderr?.on("data", (chunk: string) => {
-      stderr += chunk;
-      if (Buffer.byteLength(stderr, "utf8") > MAX_BUFFER) {
-        child.kill("SIGTERM");
-        fail(`Error output from model ${model} exceeded ${MAX_BUFFER} bytes`);
-      }
-    });
-
-    child.on("error", (error) => {
-      fail(error.message);
-    });
-
-    child.on("close", (code, closeSignal) => {
-      const text = stripControlSequences(stdout).trim();
-      const err = stripControlSequences(stderr).trim();
-
-      if (code === 0) {
-        if (text) return settle(() => resolve(text));
-        if (err) return fail(err);
-        return fail(`No output from model ${model}`);
-      }
-
-      const parts = [err || `Child pi exited with code ${code ?? "unknown"}`];
-      if (closeSignal) parts.push(`signal=${closeSignal}`);
-      fail(parts.join(" "));
-    });
-  });
+    return { model: fullId, response: text };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    return { model: fullId, error: message };
+  }
 }
 
-function synthesisPrompt(prompt: string, modelA: string, responseA: string, modelB: string, responseB: string): string {
-  return [
-    "You are synthesizing two independent model answers into one final answer.",
-    "Write one coherent response for the user.",
-    "If the answers disagree, resolve the disagreement and prefer the more precise or evidence-backed claim.",
-    "At the end, add a short 'Sources of insight' line naming both models.",
-    "",
-    `Original prompt: ${prompt}`,
-    "",
-    `--- Answer from ${modelA} ---`,
-    responseA,
-    "",
-    `--- Answer from ${modelB} ---`,
-    responseB,
-  ].join("\n");
-}
-
+/** Run the same prompt on two models in parallel. */
 export async function runTwins(
   prompt: string,
   pair: readonly [string, string],
-  cwd: string,
-  signal?: AbortSignal,
-  onProgress?: (progress: TwinsRunProgress) => void,
+  registry: TwinsModelRegistry,
+  options: RunModelOptions = {},
 ): Promise<TwinsRunResult> {
   const [modelA, modelB] = pair;
+  const runModel = options.runModel ?? runSingleModel;
+  const signal = options.signal;
 
-  onProgress?.({
-    phase: "starting",
-    message: `Starting twin run with ${modelA} + ${modelB}...`,
-  });
-
-  onProgress?.({
-    phase: "models",
-    message: `Asking both models: ${modelA} + ${modelB}`,
-  });
-
-  const [responseA, responseB] = await Promise.all([
-    runPiPrompt(modelA, prompt, cwd, signal),
-    runPiPrompt(modelB, prompt, cwd, signal),
+  const [resultA, resultB] = await Promise.all([
+    runModel(modelA, prompt, registry, signal),
+    runModel(modelB, prompt, registry, signal),
   ]);
-
-  onProgress?.({
-    phase: "synthesis",
-    message: `Synthesizing responses with ${modelA}...`,
-  });
-
-  const synthesis = await runPiPrompt(modelA, synthesisPrompt(prompt, modelA, responseA, modelB, responseB), cwd, signal);
-
-  onProgress?.({
-    phase: "done",
-    message: "Twin run complete.",
-  });
 
   return {
     modelA,
     modelB,
     prompt,
-    responseA,
-    responseB,
-    synthesis,
+    responseA: resultA.response,
+    responseB: resultB.response,
+    errorA: resultA.error,
+    errorB: resultB.error,
   };
 }
 
-export function formatTwinsMarkdown(result: TwinsRunResult): string {
-  return [
-    `## pi-twins`,
+export function formatResponsesMarkdown(result: TwinsRunResult): string {
+  const lines = [
+    "## pi-twins — model responses",
     "",
     `**Prompt**`,
     result.prompt,
     "",
-    `**Model A**: \`${result.modelA}\``,
-    result.responseA,
+  ];
+
+  lines.push(`**Model A**: \`${result.modelA}\``);
+  if (result.responseA) {
+    lines.push(result.responseA);
+  } else {
+    lines.push(`_Error: ${result.errorA ?? "no response"}_`);
+  }
+  lines.push("");
+
+  lines.push(`**Model B**: \`${result.modelB}\``);
+  if (result.responseB) {
+    lines.push(result.responseB);
+  } else {
+    lines.push(`_Error: ${result.errorB ?? "no response"}_`);
+  }
+
+  return lines.join("\n");
+}
+
+/** Build the synthesis instruction prompt (command handler injects this into Pi). */
+export function buildSynthesisPrompt(result: TwinsRunResult): string {
+  const response1 = result.responseA ?? `[エラー: ${result.errorA ?? "応答なし"}]`;
+  const response2 = result.responseB ?? `[エラー: ${result.errorB ?? "応答なし"}]`;
+
+  return [
+    "以下の2つの回答を読み、それぞれの最良部分を合成した1つの回答を書いてください。",
     "",
-    `**Model B**: \`${result.modelB}\``,
-    result.responseB,
+    `--- 回答1 (${result.modelA}) ---`,
+    response1,
     "",
-    `**Synthesis**`,
-    result.synthesis,
+    `--- 回答2 (${result.modelB}) ---`,
+    response2,
+    "",
+    "要件:",
+    "- 情報を統合し、矛盾を解消してください",
+    "- 冗長な部分は削除してください",
+    "- 1つの自然な回答として書いてください",
+  ].join("\n");
+}
+
+export async function synthesizeResponses(
+  result: TwinsRunResult,
+  registry: TwinsModelRegistry,
+  synthesisModelId?: string,
+  signal?: AbortSignal,
+): Promise<string> {
+  const modelId = synthesisModelId ?? result.modelA;
+  const synthesisPrompt = buildSynthesisPrompt(result);
+  const synthesis = await runSingleModel(modelId, synthesisPrompt, registry, signal);
+
+  if (synthesis.error || !synthesis.response) {
+    throw new Error(synthesis.error ?? `Synthesis failed for model ${modelId}`);
+  }
+
+  return synthesis.response;
+}
+
+export function formatTwinsMarkdown(result: TwinsRunResult, synthesis: string): string {
+  return [
+    formatResponsesMarkdown(result),
+    "",
+    "**Synthesis**",
+    synthesis,
   ].join("\n");
 }
