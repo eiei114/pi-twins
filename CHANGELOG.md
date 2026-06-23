@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 
 This project follows semantic versioning.
 
+## [0.1.5] - 2026-06-10
+
+### Changed
+
+- Release metadata bump for the latest Windows stability and `/twins:run` UX fixes.
+- README now pins the current published install version and documents that `/twins:run` prefers the `default` pair.
+
 ## [0.1.4] - 2026-06-10
 
 ### Changed

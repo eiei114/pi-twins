@@ -33,7 +33,7 @@ pi install npm:pi-twins
 Pin a specific version:
 
 ```bash
-pi install npm:pi-twins@0.1.0
+pi install npm:pi-twins@0.1.5
 ```
 
 Try it without permanently installing:
@@ -69,6 +69,8 @@ pairs:
     - anthropic/claude-sonnet-4
     - openai/gpt-4o
 ```
+
+`/twins:run` uses the `default` pair when present. If `default` is missing, it falls back to the first configured pair.
 
 ## Commands
 
