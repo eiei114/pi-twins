@@ -1,49 +1,60 @@
 # Examples
 
-This template ships one minimal example for each Pi package resource type.
-
-## Extension
-
-`extensions/hello.ts` registers:
-
-- `/template-hello`
-- a small session status indicator
-
-Try it with:
+## Local development
 
 ```bash
+git clone https://github.com/eiei114/pi-twins.git
+cd pi-twins
+npm install
 pi -e .
 ```
 
-Then run:
+## `/twins:run`
+
+Run the command, then enter a prompt:
 
 ```txt
-/template-hello YourName
+/twins:run
 ```
 
-## Agent Skill
+Pi sends the prompt to both models in your configured pair, then synthesizes one answer.
 
-`skills/example-skill/SKILL.md` demonstrates a minimal Agent Skill.
+## `/twins:scan`
 
-Replace it with your real workflow instructions.
+List model IDs grouped by provider:
 
-## Prompt template
+```txt
+/twins:scan
+```
 
-`prompts/example.md` demonstrates a tiny prompt template with one variable.
+Copy IDs into `~/.pi/twins.yaml`.
 
-## Theme
+## `/twins:config`
 
-`themes/example-theme.json` is a placeholder theme. Replace it or remove `themes/` if your package does not ship themes.
+Create or show `~/.pi/twins.yaml`:
 
-## Typed custom tool
+```txt
+/twins:config
+```
 
-`extensions/index.ts` registers:
+## `twins_run` tool
 
-- `/template-info`
-- `template_greet` custom tool
+Agents can call the tool directly:
 
-The tool demonstrates:
+```json
+{
+  "prompt": "Compare SQLite vs PostgreSQL for a small SaaS app",
+  "pair": "default"
+}
+```
 
-- TypeBox object parameters
-- a string enum schema via `StringEnum`
-- shared logic imported from `lib/greeting.ts`
+`pair` is optional; when omitted, pi-twins uses `default` or the first configured pair.
+
+## Configuration example
+
+```yaml
+pairs:
+  default:
+    - anthropic/claude-sonnet-4
+    - google/gemini-2.5-pro
+```
