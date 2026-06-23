@@ -20,7 +20,7 @@ pi-twins sends your prompt to two AI models in parallel, then Pi itself reads bo
 - **Automatic synthesis** — Pi reads both responses and produces one unified answer
 - **YAML configuration** — define model pairs (e.g. Claude + Gemini) in `~/.pi/twins.yaml`
 - **Model discovery** — `/twins:scan` to see which models are available
-- **On-demand only** — activate via `/twins` when you want it, no overhead otherwise
+- **On-demand only** — activate via `/twins:run` when you want it, no overhead otherwise
 
 ## Install
 
@@ -33,7 +33,7 @@ pi install npm:pi-twins
 Pin a specific version:
 
 ```bash
-pi install npm:pi-twins@0.1.5
+pi install npm:pi-twins@0.2.0
 ```
 
 Try it without permanently installing:
@@ -53,8 +53,10 @@ pi -e .
 Then run:
 
 ```txt
-/twins "What are the tradeoffs between SQLite and PostgreSQL for my use case?"
+/twins:run
 ```
+
+Enter a prompt when asked. Pi runs both models in parallel and synthesizes one answer.
 
 ## Configuration
 
@@ -72,23 +74,25 @@ pairs:
 
 `/twins:run` uses the `default` pair when present. If `default` is missing, it falls back to the first configured pair.
 
+Run `/twins:config` to create a starter file, or `/twins:scan` to list model IDs.
+
 ## Commands
 
-/twins:run — 2モデルに同じプロンプトを投げて統合回答を得る（プロンプトは実行後に入力）
-/twins:scan — 利用可能なモデル一覧を表示
+| Command | Description |
+|---|---|
+| `/twins:run` | Send the same prompt to two models and synthesize one answer |
+| `/twins:scan` | List available model IDs for `~/.pi/twins.yaml` |
+| `/twins:config` | Create or show the pi-twins config file |
 
-引数は不要。詳細は各コマンド実行後のプロンプト
+The `twins_run` tool is also available for agent-driven twin runs.
 
 ## Package contents
 
 | Path | Purpose |
 |---|---|
-| `extensions/` | Pi TypeScript extension entrypoints (`*.ts` and `index.ts`) |
-| `lib/` | Shared TypeScript helpers |
-| `skills/` | Agent Skills |
-| `prompts/` | Prompt templates |
-| `themes/` | Pi themes |
-| `docs/` | Optional supporting docs (usage, examples, release, ADRs) |
+| `extensions/` | Pi extension entrypoints (`/twins:*` commands, `twins_run` tool) |
+| `lib/` | Config loader, model scanner, parallel runner, synthesis helpers |
+| `docs/` | Usage examples and release notes |
 
 ## Development
 
@@ -97,59 +101,29 @@ npm install
 npm run ci
 ```
 
-## Development flow
+Local smoke test:
 
-Use this default flow when building a new Pi extension OSS project from this template:
-
-1. Create the Vault project notes under `4_Project/<ProjectName>/`.
-2. Add `CONTEXT.md`, `README.md`, `ROADMAP.md`, `Docs/`, `Issues/`, and `Progress/`.
-3. Write the PRD in `4_Project/<ProjectName>/Docs/`.
-4. Split approved tracer-bullet issues into `4_Project/<ProjectName>/Issues/`.
-5. Implement in the OSS repo.
-6. Run `npm run ci`, `npm test`, and `npm pack --dry-run`.
-7. Release with Trusted Publishing.
-8. Save release notes and follow-up decisions back to the Vault project.
-
-Short version:
-
-```txt
-Vault notes -> PRD -> Issues -> implement -> ci/check -> release -> save learnings
+```bash
+pi -e .
 ```
 
 ## Release
 
-This package is set up for npm Trusted Publishing, so no `NPM_TOKEN` is required.
+This package uses npm Trusted Publishing (no `NPM_TOKEN` required).
 
 ```bash
-npm version patch
-git push
+npm version patch   # or minor / major
+git push && git push --tags
 ```
+
+Pushing a `package.json` version bump to `main` triggers `auto-release.yml`, which tags the release and dispatches `publish.yml`.
 
 See [`docs/release.md`](docs/release.md) for setup details.
 
 ## Docs
 
-`docs/` is optional supporting documentation, not a fixed six-file set. README stays the GitHub/npm entrypoint; add `docs/*.md` only when they help users or maintainers.
-
-After creating a repository from this template:
-
-1. Delete or merge template bootstrap docs that no longer add project value.
-
-Useful docs to keep when they add value:
-
-- [`docs/examples.md`](docs/examples.md) — examples for extensions, skills, prompts, and themes
-- [`docs/release.md`](docs/release.md) — Trusted Publishing details (README Release summarizes the flow)
-- `docs/usage.md` — create when usage does not fit in README
-
-Optional maintainer guidance (not a public-user navigation target in mature repos):
-
-- [`docs/template-checklist.md`](docs/template-checklist.md)
-
-Template bootstrap docs to delete or merge after setup unless they still teach something project-specific:
-
-- `docs/github-template.md`
-- `docs/repository-settings.md`
-- `docs/typescript.md`
+- [`docs/examples.md`](docs/examples.md) — command and tool examples
+- [`docs/release.md`](docs/release.md) — Trusted Publishing details
 
 ## Security
 
@@ -165,4 +139,4 @@ For vulnerability reporting, see [`SECURITY.md`](SECURITY.md).
 
 ## License
 
-MIT\n
+MIT

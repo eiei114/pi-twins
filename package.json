@@ -1,6 +1,6 @@
 {
   "name": "pi-twins",
-  "version": "0.1.5",
+  "version": "0.2.0",
   "description": "Dual-model synthesis for Pi — run the same prompt on two models, get one synthesized answer",
   "type": "module",
   "license": "MIT",
@@ -25,9 +25,6 @@
   "files": [
     "extensions/",
     "lib/",
-    "skills/",
-    "prompts/",
-    "themes/",
     "docs/",
     "README.md",
     "LICENSE",
@@ -42,12 +39,6 @@
   "pi": {
     "extensions": [
       "./extensions"
-    ],
-    "skills": [
-      "./skills"
-    ],
-    "prompts": [
-      "./prompts"
     ]
   },
   "publishConfig": {

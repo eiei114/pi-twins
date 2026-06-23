@@ -4,6 +4,18 @@ All notable changes to this project will be documented in this file.
 
 This project follows semantic versioning.
 
+## [0.2.0] - 2026-06-23
+
+### Changed
+
+- Release prep: removed template example skill/prompt assets and trimmed README/docs for the published product.
+- README now documents `/twins:run`, `/twins:scan`, `/twins:config`, and the `twins_run` tool without template bootstrap guidance.
+
+### Added
+
+- Parallel dual-model runner with Pi synthesis orchestration (`lib/runner.ts`, DOT-224).
+- TypeBox-validated config loader and scanner unit tests.
+
 ## [0.1.5] - 2026-06-10
 
 ### Changed

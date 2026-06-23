@@ -8,8 +8,8 @@ const publishWorkflow = await readFile(new URL("../.github/workflows/publish.yml
 
 test("package declares pi resources", () => {
   assert.deepEqual(packageJson.pi.extensions, ["./extensions"]);
-  assert.deepEqual(packageJson.pi.skills, ["./skills"]);
-  assert.deepEqual(packageJson.pi.prompts, ["./prompts"]);
+  assert.equal(packageJson.pi.skills, undefined);
+  assert.equal(packageJson.pi.prompts, undefined);
   assert.equal(packageJson.pi.themes, undefined);
 });
 
@@ -21,7 +21,7 @@ test("package uses public publish config", () => {
   assert.equal(packageJson.publishConfig.access, "public");
 });
 
-test("template includes npm release workflow handoff", () => {
+test("release workflow includes npm publish handoff", () => {
   assert.match(autoReleaseWorkflow, /actions:\s*write/);
   assert.match(autoReleaseWorkflow, /contents:\s*write/);
   assert.match(autoReleaseWorkflow, /gh workflow run publish\.yml/);
