@@ -33,7 +33,19 @@ pi install npm:pi-twins
 Pin a specific version:
 
 ```bash
-pi install npm:pi-twins@0.2.0
+pi install npm:pi-twins@0.2.1
+```
+
+Install into the current project instead of your user Pi settings:
+
+```bash
+pi install npm:pi-twins -l
+```
+
+Or install from GitHub:
+
+```bash
+pi install git:github.com/eiei114/pi-twins
 ```
 
 Try it without permanently installing:
@@ -99,7 +111,10 @@ The `twins_run` tool is also available for agent-driven twin runs.
 ```bash
 npm install
 npm run ci
+npm pack --dry-run
 ```
+
+`npm run ci` runs typecheck, tests, and `npm pack --dry-run` via `pack:check`.
 
 Local smoke test:
 

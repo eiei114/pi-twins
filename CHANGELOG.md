@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 This project follows semantic versioning.
 
+## [0.2.1] - 2026-06-27
+
+### Changed
+
+- README install guidance now matches the current Pi OSS template: GitHub (`pi install git:`), project-local (`-l`), and explicit `npm pack --dry-run` in Development.
+
 ## [0.2.0] - 2026-06-23
 
 ### Changed
