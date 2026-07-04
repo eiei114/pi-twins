@@ -1,6 +1,6 @@
 {
   "name": "pi-twins",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "description": "Dual-model synthesis for Pi — run the same prompt on two models, get one synthesized answer",
   "type": "module",
   "license": "MIT",
