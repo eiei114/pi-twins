@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- Add Buy Me a Coffee sponsor button to README and native GitHub funding link via `.github/FUNDING.yml`.
+
 All notable changes to this project will be documented in this file.
 
 This project follows semantic versioning.
@@ -70,3 +74,4 @@ This project follows semantic versioning.
 - YAML configuration system with model pair definitions.
 - Agent state machine for sequential model calling (model A → model B → synthesis).
 - Error resilience: stale state timeout, model-not-found graceful fallback.
+
