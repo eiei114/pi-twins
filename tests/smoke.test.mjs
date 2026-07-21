@@ -8,7 +8,7 @@ const autoReleaseWorkflow = await readFile(new URL("../.github/workflows/auto-re
 const publishWorkflow = await readFile(new URL("../.github/workflows/publish.yml", import.meta.url), "utf8");
 
 test("README install pin matches package version", () => {
-  const pinMatch = readme.match(/pi install npm:pi-twins@([0-9.]+)/);
+  const pinMatch = readme.match(/^pi install npm:pi-twins@([^\s]+)$/m);
   assert.ok(pinMatch, "README should document a pinned npm install version");
   assert.equal(pinMatch[1], packageJson.version);
 });
