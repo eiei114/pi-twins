@@ -14,7 +14,9 @@ test("README install pin matches package version", () => {
 });
 
 test("README release flow matches auto-release handoff", () => {
-  const releaseBlock = readme.match(/## Release[\s\S]*?```bash\n([\s\S]*?)```/);
+  const releaseSection = readme.match(/^## Release[\s\S]*?(?=^## |\Z)/m);
+  assert.ok(releaseSection, "README should have a Release section");
+  const releaseBlock = releaseSection[0].match(/```bash\n([\s\S]*?)```/);
   assert.ok(releaseBlock, "README should document a release command block");
   const commands = releaseBlock[1];
   assert.match(commands, /^npm version (patch|minor|major)/m);
@@ -23,7 +25,9 @@ test("README release flow matches auto-release handoff", () => {
 });
 
 test("README development section does not duplicate pack:check", () => {
-  const devBlock = readme.match(/## Development[\s\S]*?```bash\n([\s\S]*?)```/);
+  const devSection = readme.match(/^## Development[\s\S]*?(?=^## |\Z)/m);
+  assert.ok(devSection, "README should have a Development section");
+  const devBlock = devSection[0].match(/```bash\n([\s\S]*?)```/);
   assert.ok(devBlock, "README should document a development command block");
   const commands = devBlock[1];
   assert.match(commands, /npm run ci/);
