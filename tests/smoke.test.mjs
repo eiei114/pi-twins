@@ -8,9 +8,30 @@ const autoReleaseWorkflow = await readFile(new URL("../.github/workflows/auto-re
 const publishWorkflow = await readFile(new URL("../.github/workflows/publish.yml", import.meta.url), "utf8");
 
 test("README install pin matches package version", () => {
-  const pinMatch = readme.match(/pi install npm:pi-twins@([0-9.]+)/);
+  const pinMatch = readme.match(/^pi install npm:pi-twins@([^\s]+)$/m);
   assert.ok(pinMatch, "README should document a pinned npm install version");
   assert.equal(pinMatch[1], packageJson.version);
+});
+
+test("README release flow matches auto-release handoff", () => {
+  const releaseSection = readme.match(/^## Release[\s\S]*?(?=^## |\Z)/m);
+  assert.ok(releaseSection, "README should have a Release section");
+  const releaseBlock = releaseSection[0].match(/```bash\n([\s\S]*?)```/);
+  assert.ok(releaseBlock, "README should document a release command block");
+  const commands = releaseBlock[1];
+  assert.match(commands, /^npm version (patch|minor|major)/m);
+  assert.match(commands, /^git push$/m);
+  assert.doesNotMatch(commands, /push --tags/);
+});
+
+test("README development section does not duplicate pack:check", () => {
+  const devSection = readme.match(/^## Development[\s\S]*?(?=^## |\Z)/m);
+  assert.ok(devSection, "README should have a Development section");
+  const devBlock = devSection[0].match(/```bash\n([\s\S]*?)```/);
+  assert.ok(devBlock, "README should document a development command block");
+  const commands = devBlock[1];
+  assert.match(commands, /npm run ci/);
+  assert.doesNotMatch(commands, /npm pack --dry-run/);
 });
 
 test("package declares pi resources", () => {

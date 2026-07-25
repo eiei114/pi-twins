@@ -112,7 +112,6 @@ The `twins_run` tool is also available for agent-driven twin runs.
 ```bash
 npm install
 npm run ci
-npm pack --dry-run
 ```
 
 `npm run ci` runs typecheck, tests, and `npm pack --dry-run` via `pack:check`.
@@ -129,7 +128,7 @@ This package uses npm Trusted Publishing (no `NPM_TOKEN` required).
 
 ```bash
 npm version patch   # or minor / major
-git push && git push --tags
+git push
 ```
 
 Pushing a `package.json` version bump to `main` triggers `auto-release.yml`, which tags the release and dispatches `publish.yml`.
