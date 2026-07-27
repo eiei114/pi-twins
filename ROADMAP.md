@@ -17,15 +17,16 @@ It is intentionally short, opinionated, and seed-oriented — not a feature wish
 
 | Item | Value |
 |---|---|
-| Latest release | **v0.2.2** (2026-07-04) — sponsor button + patch |
-| `package.json` version | `0.2.2` (in sync with npm) |
-| npm latest | `0.2.2` |
+| Latest release | **v0.2.3** (2026-07-20) — patch metadata bump |
+| `package.json` version | `0.2.3` (in sync with npm) |
+| npm latest | `0.2.3` |
 | Next planned | **v0.2.3** (patch — hygiene/docs/tests) → **v0.3.0** (minor — behavior) |
 | CI | `npm run ci` = typecheck + `node --test` + `npm pack --dry-run` |
 | Release mechanism | npm Trusted Publishing via `auto-release.yml` → `publish.yml` |
 
 **Recent trajectory** (see [`CHANGELOG.md`](CHANGELOG.md) for detail):
 
+- `v0.2.3` — patch metadata bump for the hygiene/docs/tests maintenance window.
 - `v0.2.2` — README sponsor button + native GitHub funding link (`.github/FUNDING.yml`).
 - `v0.2.1` — README install paths aligned with the Pi OSS template.
 - `v0.2.0` — parallel dual-model runner + Pi synthesis orchestration (`lib/runner.ts`, DOT-224); TypeBox-validated config loader + scanner tests.
@@ -33,7 +34,6 @@ It is intentionally short, opinionated, and seed-oriented — not a feature wish
 
 ### Known housekeeping (low priority)
 
-- `CHANGELOG.md` still lists the sponsor note under **Unreleased**, but it shipped in `v0.2.2`. Fold it into a `[0.2.2]` section on the next doc pass (seed `M-0`).
 - Two Dependabot PRs are open and awaiting review: `typebox 1.3.0 → 1.3.6` (#20) and `@types/node 22 → 25.9.3` (#21).
 
 ---
@@ -87,19 +87,12 @@ Seeds are tagged by area: `docs` · `tests` · `refactor` · `feature` · `chore
 
 | ID | Title | Area | Est. | Target |
 |---|---|---|---|---|
-| M-0 | Reconcile CHANGELOG Unreleased → `[0.2.2]` | docs | ~20–30m | v0.2.3 |
 | M-1 | Refresh `scanner.ts` model catalog (remove fictional/stale IDs) | refactor | ~30–45m | v0.2.3 |
 | M-2 | Backfill `extensions/index.ts` tests (`resolvePair`, `ensureConfig`) | tests | ~45–60m | v0.2.3 |
 | M-3 | Add `synthesizeResponses` + `formatTwinsMarkdown` tests | tests | ~30–45m | v0.2.3 |
 | M-4 | Add `docs/troubleshooting.md` (common errors → fixes) | docs | ~45–60m | v0.2.3 |
 | M-5 | Interactive pair picker for `/twins:run` | feature | ~45–75m | v0.3.0 |
 | M-6 | Configurable synthesis prompt language (EN default, JA option) | feature | ~60–90m | v0.3.0 |
-
-### M-0 — Reconcile CHANGELOG Unreleased → `[0.2.2]`
-The sponsor button shipped in `v0.2.2` but `CHANGELOG.md` still lists it under
-**Unreleased**. Move it into a dated `[0.2.2]` section.
-- **Acceptance**: `CHANGELOG.md` has a `[0.2.2] - 2026-07-04` section containing the
-  sponsor note; **Unreleased** is empty or removed; `npm run ci` green.
 
 ### M-1 — Refresh `scanner.ts` model catalog
 `lib/scanner.ts` is a hardcoded MVP list and contains IDs that do not resolve to
