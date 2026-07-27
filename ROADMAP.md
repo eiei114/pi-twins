@@ -20,7 +20,7 @@ It is intentionally short, opinionated, and seed-oriented — not a feature wish
 | Latest release | **v0.2.3** (2026-07-20) — patch metadata bump |
 | `package.json` version | `0.2.3` (in sync with npm) |
 | npm latest | `0.2.3` |
-| Next planned | **v0.2.3** (patch — hygiene/docs/tests) → **v0.3.0** (minor — behavior) |
+| Next planned | **v0.3.0** (minor — behavior) |
 | CI | `npm run ci` = typecheck + `node --test` + `npm pack --dry-run` |
 | Release mechanism | npm Trusted Publishing via `auto-release.yml` → `publish.yml` |
 
