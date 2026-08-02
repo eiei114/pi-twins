@@ -63,11 +63,13 @@ history, or a hosted service.
 
 ## Short-term maintenance goals (next 2–3 releases)
 
-### v0.2.3 — hygiene, docs & tests (patch, no behavior change)
+### v0.2.3 — hygiene, docs & tests (patch)
 
 Land the low-risk seeds: reconcile the changelog, refresh the model catalog so it
-only references real models, backfill the missing unit tests, and add a
-troubleshooting doc. No user-facing behavior change, so this is a patch bump.
+only references real models (correcting `/twins:scan` output by removing fictional
+or duplicate IDs), backfill the missing unit tests, and add a troubleshooting doc.
+Catalog correction is user-visible in scan output only; core twin-run behavior is
+unchanged, so this remains a patch bump.
 
 ### v0.3.0 — small behavior improvements (minor)
 

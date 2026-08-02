@@ -151,6 +151,10 @@ test("findModelById returns undefined for unknown model", () => {
 
 test("scanner catalog excludes fictional or duplicate model IDs", () => {
   const ids = scanModels().map((model) => model.id);
+  assert.ok(
+    ids.includes("deepseek/deepseek-r1"),
+    "scanner catalog should retain deepseek/deepseek-r1",
+  );
   const bannedIds = [
     "deepseek/deepseek-v4-pro",
     "anthropic/claude-sonnet-4-20250514",
