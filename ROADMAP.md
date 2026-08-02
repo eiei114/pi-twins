@@ -26,7 +26,7 @@ It is intentionally short, opinionated, and seed-oriented — not a feature wish
 
 **Recent trajectory** (see [`CHANGELOG.md`](CHANGELOG.md) for detail):
 
-- `v0.2.3` — patch metadata bump for the hygiene/docs/tests maintenance window.
+- `v0.2.3` — patch metadata bump for the hygiene/docs/tests maintenance window; scanner catalog pruned to real model IDs (M-1, DOT-1312).
 - `v0.2.2` — README sponsor button + native GitHub funding link (`.github/FUNDING.yml`).
 - `v0.2.1` — README install paths aligned with the Pi OSS template.
 - `v0.2.0` — parallel dual-model runner + Pi synthesis orchestration (`lib/runner.ts`, DOT-224); TypeBox-validated config loader + scanner tests.
@@ -34,7 +34,7 @@ It is intentionally short, opinionated, and seed-oriented — not a feature wish
 
 ### Known housekeeping (low priority)
 
-- Two Dependabot PRs are open and awaiting review: `typebox 1.3.0 → 1.3.6` (#20) and `@types/node 22 → 25.9.3` (#21).
+- Open Dependabot PRs awaiting review: `actions/setup-node` 6 → 7 (#27), `typebox` 1.3.6 → 1.3.8 (#29), and `@types/node` 25.9.3 → 26.0.1 (#30).
 
 ---
 
@@ -87,20 +87,11 @@ Seeds are tagged by area: `docs` · `tests` · `refactor` · `feature` · `chore
 
 | ID | Title | Area | Est. | Target |
 |---|---|---|---|---|
-| M-1 | Refresh `scanner.ts` model catalog (remove fictional/stale IDs) | refactor | ~30–45m | v0.2.3 |
 | M-2 | Backfill `extensions/index.ts` tests (`resolvePair`, `ensureConfig`) | tests | ~45–60m | v0.2.3 |
 | M-3 | Add `synthesizeResponses` + `formatTwinsMarkdown` tests | tests | ~30–45m | v0.2.3 |
 | M-4 | Add `docs/troubleshooting.md` (common errors → fixes) | docs | ~45–60m | v0.2.3 |
 | M-5 | Interactive pair picker for `/twins:run` | feature | ~45–75m | v0.3.0 |
 | M-6 | Configurable synthesis prompt language (EN default, JA option) | feature | ~60–90m | v0.3.0 |
-
-### M-1 — Refresh `scanner.ts` model catalog
-`lib/scanner.ts` is a hardcoded MVP list and contains IDs that do not resolve to
-real models (e.g. `deepseek/deepseek-v4-pro`) and a duplicate-ish date-pinned
-Claude entry. Prune to models that actually resolve via Pi's provider registry.
-- **Acceptance**: every ID in `KNOWN_MODELS` is a real, currently-available model
-  in `provider/model-id` form; no fictional IDs; existing `config-scanner.test.mjs`
-  assertions still pass (update display names only if needed); `npm run ci` green.
 
 ### M-2 — Backfill `extensions/index.ts` tests
 The command wiring in `extensions/index.ts` is currently untested. Focus on the

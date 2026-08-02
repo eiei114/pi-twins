@@ -15,12 +15,10 @@ export interface ModelEntry {
 const KNOWN_MODELS: ModelEntry[] = [
   { id: "anthropic/claude-sonnet-4", displayName: "Claude 4 Sonnet", provider: "anthropic" },
   { id: "anthropic/claude-opus-4", displayName: "Claude 4 Opus", provider: "anthropic" },
-  { id: "anthropic/claude-sonnet-4-20250514", displayName: "Claude 4 Sonnet (date pinned)", provider: "anthropic" },
   { id: "google/gemini-2.5-pro", displayName: "Gemini 2.5 Pro", provider: "google" },
   { id: "google/gemini-2.5-flash", displayName: "Gemini 2.5 Flash", provider: "google" },
   { id: "openai/gpt-4o", displayName: "GPT-4o", provider: "openai" },
   { id: "openai/gpt-4.1", displayName: "GPT-4.1", provider: "openai" },
-  { id: "deepseek/deepseek-v4-pro", displayName: "DeepSeek V4 Pro", provider: "deepseek" },
   { id: "deepseek/deepseek-r1", displayName: "DeepSeek R1", provider: "deepseek" },
 ];
 
