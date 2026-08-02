@@ -32,7 +32,7 @@ test("TwinsConfigSchema accepts valid pairs", () => {
   const valid = {
     pairs: {
       default: ["anthropic/claude-sonnet-4", "google/gemini-2.5-pro"],
-      coding: ["openai/gpt-4o", "deepseek/deepseek-v4-pro"],
+      coding: ["openai/gpt-4o", "deepseek/deepseek-r1"],
     },
   };
   assert.equal(Check(TwinsConfigSchema, valid), true);
@@ -96,10 +96,10 @@ test("getPair returns named pair from config", async () => {
     - google/gemini-2.5-pro
   coding:
     - openai/gpt-4o
-    - deepseek/deepseek-v4-pro
+    - deepseek/deepseek-r1
 `;
   await withTempConfig(yaml, async (configPath) => {
-    assert.deepEqual(getPair("coding", configPath), ["openai/gpt-4o", "deepseek/deepseek-v4-pro"]);
+    assert.deepEqual(getPair("coding", configPath), ["openai/gpt-4o", "deepseek/deepseek-r1"]);
     assert.deepEqual(getPair(undefined, configPath), [
       "anthropic/claude-sonnet-4",
       "google/gemini-2.5-pro",
@@ -147,6 +147,28 @@ test("findModelById returns matching model", () => {
 
 test("findModelById returns undefined for unknown model", () => {
   assert.equal(findModelById("nonexistent/model"), undefined);
+});
+
+test("scanner catalog excludes fictional or duplicate model IDs", () => {
+  const ids = scanModels().map((model) => model.id);
+  assert.ok(
+    ids.includes("deepseek/deepseek-r1"),
+    "scanner catalog should retain deepseek/deepseek-r1",
+  );
+  const bannedIds = [
+    "deepseek/deepseek-v4-pro",
+    "anthropic/claude-sonnet-4-20250514",
+  ];
+
+  for (const bannedId of bannedIds) {
+    assert.equal(
+      ids.includes(bannedId),
+      false,
+      `scanner catalog should not include ${bannedId}`,
+    );
+  }
+
+  assert.equal(new Set(ids).size, ids.length, "scanner catalog should not contain duplicate IDs");
 });
 
 test("groupByProvider groups models by provider", () => {
