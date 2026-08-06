@@ -4,8 +4,15 @@ import test from "node:test";
 
 const packageJson = JSON.parse(await readFile(new URL("../package.json", import.meta.url), "utf8"));
 const readme = await readFile(new URL("../README.md", import.meta.url), "utf8");
+const changelog = await readFile(new URL("../CHANGELOG.md", import.meta.url), "utf8");
 const autoReleaseWorkflow = await readFile(new URL("../.github/workflows/auto-release.yml", import.meta.url), "utf8");
 const publishWorkflow = await readFile(new URL("../.github/workflows/publish.yml", import.meta.url), "utf8");
+
+test("CHANGELOG top release matches package version", () => {
+  const topRelease = changelog.match(/^## \[([^\]]+)\]/m);
+  assert.ok(topRelease, "CHANGELOG should document a top-level release section");
+  assert.equal(topRelease[1], packageJson.version);
+});
 
 test("README install pin matches package version", () => {
   const pinMatch = readme.match(/^pi install npm:pi-twins@([^\s]+)$/m);

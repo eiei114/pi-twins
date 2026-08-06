@@ -17,16 +17,17 @@ It is intentionally short, opinionated, and seed-oriented — not a feature wish
 
 | Item | Value |
 |---|---|
-| Latest release | **v0.2.3** (2026-07-20) — patch metadata bump |
-| `package.json` version | `0.2.3` (in sync with npm) |
-| npm latest | `0.2.3` |
+| Latest release | **v0.2.4** (2026-08-04) — hygiene/docs/tests patch |
+| `package.json` version | `0.2.4` (in sync with npm) |
+| npm latest | `0.2.4` |
 | Next planned | **v0.3.0** (minor — behavior) |
 | CI | `npm run ci` = typecheck + `node --test` + `npm pack --dry-run` |
 | Release mechanism | npm Trusted Publishing via `auto-release.yml` → `publish.yml` |
 
 **Recent trajectory** (see [`CHANGELOG.md`](CHANGELOG.md) for detail):
 
-- `v0.2.3` — patch metadata bump for the hygiene/docs/tests maintenance window; scanner catalog pruned to real model IDs (M-1, DOT-1312).
+- `v0.2.4` — scanner catalog pruned to real model IDs (M-1, DOT-1312); README/docs alignment, Discord badge, and dev-dependency bumps.
+- `v0.2.3` — patch metadata bump for the hygiene/docs/tests maintenance window.
 - `v0.2.2` — README sponsor button + native GitHub funding link (`.github/FUNDING.yml`).
 - `v0.2.1` — README install paths aligned with the Pi OSS template.
 - `v0.2.0` — parallel dual-model runner + Pi synthesis orchestration (`lib/runner.ts`, DOT-224); TypeBox-validated config loader + scanner tests.
@@ -34,7 +35,7 @@ It is intentionally short, opinionated, and seed-oriented — not a feature wish
 
 ### Known housekeeping (low priority)
 
-- Open Dependabot PRs awaiting review: `actions/setup-node` 6 → 7 (#27), `typebox` 1.3.6 → 1.3.8 (#29), and `@types/node` 25.9.3 → 26.0.1 (#30).
+- Open Dependabot PR awaiting review: `@types/node` 26.1.0 → 26.1.2 in the npm-dev-minor-patch group (#33).
 
 ---
 
