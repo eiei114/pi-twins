@@ -4,6 +4,19 @@ All notable changes to this project will be documented in this file.
 
 This project follows semantic versioning.
 
+## [0.2.4] - 2026-08-04
+
+### Changed
+
+- Prune `scanner.ts` model catalog to real, non-duplicate IDs (DOT-1312).
+- Align README release and development commands with the auto-release workflow (DOT-1172).
+- Add Discord community badge to README.
+- Bump dev dependencies: `actions/setup-node` 7, `typebox` 1.3.8, `@types/node` 26.1.0.
+
+### Added
+
+- Regression test anchoring the README install pin regex to the full line (DOT-973).
+
 ## [0.2.3] - 2026-07-20
 
 ### Changed
