@@ -56,7 +56,7 @@
     "@earendil-works/pi-tui": "latest",
     "@types/node": "^26.1.0",
     "typebox": "latest",
-    "typescript": "^6.0.3"
+    "typescript": "^7.0.2"
   },
   "dependencies": {
     "yaml": "^2.9.0"
