@@ -4,6 +4,8 @@ import { join, dirname } from "node:path";
 import { parse } from "yaml";
 import { Check } from "typebox/schema";
 import {
+  SYNTHESIS_INSTRUCTIONS_MAX_LENGTH,
+  SYNTHESIS_MODES,
   TwinsConfigSchema,
   type TwinsConfig,
   DEFAULT_PAIR_NAME,
@@ -45,6 +47,33 @@ function resolveConfigPath(configPath?: string): string {
   return configPath ?? DEFAULT_CONFIG_PATH;
 }
 
+function isObject(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function validateSynthesisConfigDetails(configPath: string, parsed: unknown): void {
+  if (!isObject(parsed) || !isObject(parsed.synthesis)) return;
+
+  const { mode, instructions } = parsed.synthesis;
+  if (typeof mode === "string" && !(SYNTHESIS_MODES as readonly string[]).includes(mode)) {
+    throw new Error(
+      formatValidationError(
+        configPath,
+        `expected "synthesis.mode" to be one of: ${SYNTHESIS_MODES.join(", ")}`,
+      ),
+    );
+  }
+
+  if (typeof instructions === "string" && instructions.length > SYNTHESIS_INSTRUCTIONS_MAX_LENGTH) {
+    throw new Error(
+      formatValidationError(
+        configPath,
+        `expected "synthesis.instructions" to be ${SYNTHESIS_INSTRUCTIONS_MAX_LENGTH} characters or fewer`,
+      ),
+    );
+  }
+}
+
 /** Read and validate twins config from ~/.pi/twins.yaml (or an override path). */
 export function loadConfig(configPath?: string): TwinsConfig {
   const path = resolveConfigPath(configPath);
@@ -61,6 +90,8 @@ export function loadConfig(configPath?: string): TwinsConfig {
     const msg = err instanceof Error ? err.message : String(err);
     throw new Error(formatValidationError(path, `failed to parse YAML: ${msg}`));
   }
+
+  validateSynthesisConfigDetails(path, parsed);
 
   if (!Check(TwinsConfigSchema, parsed)) {
     throw new Error(
@@ -113,6 +144,11 @@ pairs:
   coding:
     - anthropic/claude-sonnet-4
     - openai/gpt-4o
+
+# Optional synthesis defaults. Omit this block to keep balanced synthesis.
+# synthesis:
+#   mode: balanced # balanced | decision | critique | concise
+#   instructions: "Prefer concrete next steps when useful."
 `;
 
   writeFileSync(configPath, template, "utf-8");

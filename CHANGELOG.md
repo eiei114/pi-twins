@@ -4,6 +4,16 @@ All notable changes to this project will be documented in this file.
 
 This project follows semantic versioning.
 
+## [0.3.0] - 2026-08-10
+
+### Added
+
+- Add optional synthesis controls for config defaults and `twins_run` call overrides (`balanced`, `decision`, `critique`, `concise`) with bounded additional instructions (DOT-1436).
+
+### Changed
+
+- Bump package version to `0.3.0` for the minor user-facing synthesis controls release.
+
 ## [0.2.4] - 2026-08-04
 
 ### Changed

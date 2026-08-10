@@ -13,11 +13,34 @@ export const ModelPairSchema = Type.Tuple([
   Type.String({ minLength: 1, description: "Second model (provider/model-id)" }),
 ]);
 
+export const SYNTHESIS_INSTRUCTIONS_MAX_LENGTH = 2000;
+
+export const SYNTHESIS_MODES = ["balanced", "decision", "critique", "concise"] as const;
+
+export const SynthesisModeSchema = StringEnum(SYNTHESIS_MODES, {
+  description: "How pi-twins should shape the final synthesized answer",
+});
+
+export type SynthesisMode = Static<typeof SynthesisModeSchema>;
+
+export const SynthesisConfigSchema = Type.Object({
+  mode: Type.Optional(SynthesisModeSchema),
+  instructions: Type.Optional(Type.String({
+    maxLength: SYNTHESIS_INSTRUCTIONS_MAX_LENGTH,
+    description: `Additional synthesis instructions (${SYNTHESIS_INSTRUCTIONS_MAX_LENGTH} characters max)`,
+  })),
+}, {
+  description: "Optional defaults for the final synthesis prompt",
+});
+
+export type SynthesisConfig = Static<typeof SynthesisConfigSchema>;
+
 /** Twins config YAML shape (~/.pi/twins.yaml). */
 export const TwinsConfigSchema = Type.Object({
   pairs: Type.Record(Type.String({ minLength: 1 }), ModelPairSchema, {
     description: "Named model pairs for twin runs",
   }),
+  synthesis: Type.Optional(SynthesisConfigSchema),
 });
 
 export type TwinsConfig = Static<typeof TwinsConfigSchema>;
@@ -26,6 +49,11 @@ export type TwinsConfig = Static<typeof TwinsConfigSchema>;
 export const TwinsRunToolParametersSchema = Type.Object({
   prompt: Type.String({ description: "The question or task to ask both models" }),
   pair: Type.Optional(Type.String({ description: "Pair name from ~/.pi/twins.yaml (defaults to first pair)" })),
+  synthesisMode: Type.Optional(SynthesisModeSchema),
+  synthesisInstructions: Type.Optional(Type.String({
+    maxLength: SYNTHESIS_INSTRUCTIONS_MAX_LENGTH,
+    description: `Per-call synthesis instructions (${SYNTHESIS_INSTRUCTIONS_MAX_LENGTH} characters max)`,
+  })),
 });
 
 export type TwinsRunToolParameters = Static<typeof TwinsRunToolParametersSchema>;
