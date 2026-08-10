@@ -21,6 +21,7 @@ pi-twins sends your prompt to two AI models in parallel, then Pi itself reads bo
 
 - **Dual-model execution** — run the same prompt on two models simultaneously
 - **Automatic synthesis** — Pi reads both responses and produces one unified answer
+- **Synthesis controls** — choose balanced, decision, critique, or concise final-answer modes with optional instructions
 - **YAML configuration** — define model pairs (e.g. Claude + Gemini) in `~/.pi/twins.yaml`
 - **Model discovery** — `/twins:scan` to see which models are available
 - **On-demand only** — activate via `/twins:run` when you want it, no overhead otherwise
@@ -36,7 +37,7 @@ pi install npm:pi-twins
 Pin a specific version:
 
 ```bash
-pi install npm:pi-twins@0.2.4
+pi install npm:pi-twins@0.3.0
 ```
 
 Install into the current project instead of your user Pi settings:
@@ -85,9 +86,14 @@ pairs:
   coding:
     - anthropic/claude-sonnet-4
     - openai/gpt-4o
+
+# Optional: omit this block to keep balanced default synthesis.
+synthesis:
+  mode: decision # balanced | decision | critique | concise
+  instructions: "Prioritize concrete next steps."
 ```
 
-`/twins:run` uses the `default` pair when present. If `default` is missing, it falls back to the first configured pair.
+`/twins:run` uses the `default` pair when present. If `default` is missing, it falls back to the first configured pair. The optional top-level `synthesis` block sets reusable defaults for the final answer; existing configs with only `pairs:` keep the balanced behavior.
 
 Run `/twins:config` to create a starter file, or `/twins:scan` to list model IDs.
 
@@ -99,7 +105,16 @@ Run `/twins:config` to create a starter file, or `/twins:scan` to list model IDs
 | `/twins:scan` | List available model IDs for `~/.pi/twins.yaml` |
 | `/twins:config` | Create or show the pi-twins config file |
 
-The `twins_run` tool is also available for agent-driven twin runs.
+The `twins_run` tool is also available for agent-driven twin runs. Tool calls may override synthesis defaults per request:
+
+```json
+{
+  "prompt": "Choose the safest rollout plan for this migration",
+  "pair": "default",
+  "synthesisMode": "decision",
+  "synthesisInstructions": "Call out rollback risks explicitly."
+}
+```
 
 ## Package contents
 

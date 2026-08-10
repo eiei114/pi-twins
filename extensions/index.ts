@@ -6,6 +6,7 @@ import {
   formatTwinsMarkdown,
   runTwins,
   synthesizeResponses,
+  type SynthesisPromptOptions,
 } from "../lib/runner.ts";
 import { groupByProvider } from "../lib/scanner.ts";
 import { DEFAULT_PAIR_NAME, TwinsRunToolParametersSchema } from "../lib/schema.ts";
@@ -23,8 +24,7 @@ async function ensureConfig(ctx: ExtensionCommandContext): Promise<boolean> {
   return true;
 }
 
-function resolvePair(pairName?: string): [string, string] {
-  const config = loadConfig();
+function resolvePair(config: ReturnType<typeof loadConfig>, pairName?: string): [string, string] {
   const names = Object.keys(config.pairs);
   if (names.length === 0) throw new Error("No pairs found in ~/.pi/twins.yaml");
 
@@ -36,6 +36,19 @@ function resolvePair(pairName?: string): [string, string] {
         : names[0];
 
   return config.pairs[resolvedName];
+}
+
+function resolveSynthesisOptions(
+  config: ReturnType<typeof loadConfig>,
+  overrides: {
+    synthesisMode?: SynthesisPromptOptions["mode"];
+    synthesisInstructions?: string;
+  } = {},
+): SynthesisPromptOptions {
+  return {
+    mode: overrides.synthesisMode ?? config.synthesis?.mode,
+    instructions: overrides.synthesisInstructions ?? config.synthesis?.instructions,
+  };
 }
 
 export default function (pi: ExtensionAPI) {
@@ -87,7 +100,7 @@ export default function (pi: ExtensionAPI) {
         if (!prompt?.trim()) return;
 
         const config = loadConfig();
-        const pair = resolvePair();
+        const pair = resolvePair(config);
         const pairNames = Object.keys(config.pairs);
         if (pairNames.length > 1) {
           const usedName =
@@ -124,7 +137,7 @@ export default function (pi: ExtensionAPI) {
         ctx.ui.setWorkingMessage("Thinking... synthesizing the best parts");
         ctx.ui.setStatus("twins", "Synthesizing responses...");
 
-        await pi.sendUserMessage(buildSynthesisPrompt(result), { deliverAs: "followUp" });
+        await pi.sendUserMessage(buildSynthesisPrompt(result, resolveSynthesisOptions(config)), { deliverAs: "followUp" });
 
         pi.sendMessage({
           customType: "twins",
@@ -162,14 +175,16 @@ export default function (pi: ExtensionAPI) {
     parameters: TwinsRunToolParametersSchema,
     async execute(_toolCallId, params, signal, _onUpdate, ctx) {
       try {
-        const pair = resolvePair(params.pair);
+        const config = loadConfig();
+        const pair = resolvePair(config, params.pair);
+        const synthesisOptions = resolveSynthesisOptions(config, params);
 
         const result = await runTwins(params.prompt, pair, ctx.modelRegistry, { signal });
         if (!result.responseA && !result.responseB) {
           throw new Error("Both models failed");
         }
 
-        const synthesis = await synthesizeResponses(result, ctx.modelRegistry, pair[0], signal);
+        const synthesis = await synthesizeResponses(result, ctx.modelRegistry, pair[0], signal, synthesisOptions);
         return {
           content: [{ type: "text", text: formatTwinsMarkdown(result, synthesis) }],
           details: { pair, modelA: result.modelA, modelB: result.modelB },

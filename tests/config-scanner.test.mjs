@@ -12,7 +12,11 @@ const {
   ConfigNotFoundError,
 } = await import("../lib/config.ts");
 const { scanModels, findModelById, groupByProvider } = await import("../lib/scanner.ts");
-const { TwinsConfigSchema, TwinsRunToolParametersSchema } = await import("../lib/schema.ts");
+const {
+  SYNTHESIS_INSTRUCTIONS_MAX_LENGTH,
+  TwinsConfigSchema,
+  TwinsRunToolParametersSchema,
+} = await import("../lib/schema.ts");
 const { Check } = await import("typebox/schema");
 
 async function withTempConfig(content, fn) {
@@ -38,15 +42,61 @@ test("TwinsConfigSchema accepts valid pairs", () => {
   assert.equal(Check(TwinsConfigSchema, valid), true);
 });
 
+test("TwinsConfigSchema accepts optional synthesis defaults", () => {
+  const valid = {
+    pairs: {
+      default: ["anthropic/claude-sonnet-4", "google/gemini-2.5-pro"],
+    },
+    synthesis: {
+      mode: "decision",
+      instructions: "Prefer an actionable recommendation.",
+    },
+  };
+  assert.equal(Check(TwinsConfigSchema, valid), true);
+});
+
+test("TwinsConfigSchema rejects unknown synthesis modes and overlong instructions", () => {
+  const base = {
+    pairs: {
+      default: ["anthropic/claude-sonnet-4", "google/gemini-2.5-pro"],
+    },
+  };
+
+  assert.equal(Check(TwinsConfigSchema, { ...base, synthesis: { mode: "verbose" } }), false);
+  assert.equal(
+    Check(TwinsConfigSchema, {
+      ...base,
+      synthesis: { instructions: "x".repeat(SYNTHESIS_INSTRUCTIONS_MAX_LENGTH + 1) },
+    }),
+    false,
+  );
+});
+
 test("TwinsConfigSchema rejects invalid pairs", () => {
   assert.equal(Check(TwinsConfigSchema, { pairs: { default: ["only-one"] } }), false);
   assert.equal(Check(TwinsConfigSchema, {}), false);
 });
 
-test("TwinsRunToolParametersSchema accepts prompt and optional pair", () => {
+test("TwinsRunToolParametersSchema accepts prompt and optional synthesis controls", () => {
   assert.equal(Check(TwinsRunToolParametersSchema, { prompt: "hello" }), true);
   assert.equal(Check(TwinsRunToolParametersSchema, { prompt: "hello", pair: "default" }), true);
+  assert.equal(
+    Check(TwinsRunToolParametersSchema, {
+      prompt: "hello",
+      synthesisMode: "critique",
+      synthesisInstructions: "Call out weak evidence.",
+    }),
+    true,
+  );
   assert.equal(Check(TwinsRunToolParametersSchema, {}), false);
+  assert.equal(Check(TwinsRunToolParametersSchema, { prompt: "hello", synthesisMode: "verbose" }), false);
+  assert.equal(
+    Check(TwinsRunToolParametersSchema, {
+      prompt: "hello",
+      synthesisInstructions: "x".repeat(SYNTHESIS_INSTRUCTIONS_MAX_LENGTH + 1),
+    }),
+    false,
+  );
 });
 
 test("loadConfig throws ConfigNotFoundError when file is missing", async () => {
@@ -86,6 +136,30 @@ test("loadConfig rejects invalid YAML shape", async () => {
 `;
   await withTempConfig(yaml, async (configPath) => {
     assert.throws(() => loadConfig(configPath), /Invalid pi-twins config/);
+  });
+});
+
+test("loadConfig reports clear synthesis validation paths", async () => {
+  const invalidMode = `pairs:
+  default:
+    - anthropic/claude-sonnet-4
+    - google/gemini-2.5-pro
+synthesis:
+  mode: verbose
+`;
+  await withTempConfig(invalidMode, async (configPath) => {
+    assert.throws(() => loadConfig(configPath), /synthesis\.mode/);
+  });
+
+  const overlongInstructions = `pairs:
+  default:
+    - anthropic/claude-sonnet-4
+    - google/gemini-2.5-pro
+synthesis:
+  instructions: ${"x".repeat(SYNTHESIS_INSTRUCTIONS_MAX_LENGTH + 1)}
+`;
+  await withTempConfig(overlongInstructions, async (configPath) => {
+    assert.throws(() => loadConfig(configPath), /synthesis\.instructions/);
   });
 });
 

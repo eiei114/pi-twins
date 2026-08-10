@@ -50,6 +50,17 @@ Agents can call the tool directly:
 
 `pair` is optional; when omitted, pi-twins uses `default` or the first configured pair.
 
+Override synthesis defaults for one tool call:
+
+```json
+{
+  "prompt": "Compare SQLite vs PostgreSQL for a small SaaS app",
+  "pair": "default",
+  "synthesisMode": "decision",
+  "synthesisInstructions": "End with a recommended choice and migration caveats."
+}
+```
+
 ## Configuration example
 
 ```yaml
@@ -57,4 +68,9 @@ pairs:
   default:
     - anthropic/claude-sonnet-4
     - google/gemini-2.5-pro
+
+# Optional synthesis defaults; omit for balanced behavior.
+synthesis:
+  mode: critique
+  instructions: "Highlight uncertain claims before the final answer."
 ```

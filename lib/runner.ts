@@ -4,6 +4,7 @@ import {
   type Model,
   type UserMessage,
 } from "@earendil-works/pi-ai";
+import { SYNTHESIS_INSTRUCTIONS_MAX_LENGTH, type SynthesisMode } from "./schema.ts";
 
 export interface TwinsModelRegistry {
   find(provider: string, modelId: string): Model<Api> | undefined;
@@ -27,6 +28,11 @@ export interface TwinsRunResult {
   responseB?: string;
   errorA?: string;
   errorB?: string;
+}
+
+export interface SynthesisPromptOptions {
+  mode?: SynthesisMode;
+  instructions?: string;
 }
 
 export interface RunModelOptions {
@@ -139,6 +145,53 @@ export async function runTwins(
   };
 }
 
+const BALANCED_SYNTHESIS_REQUIREMENTS = [
+  "- 情報を統合し、矛盾を解消してください",
+  "- 冗長な部分は削除してください",
+  "- 1つの自然な回答として書いてください",
+];
+
+const SYNTHESIS_MODE_REQUIREMENTS: Record<SynthesisMode, string[]> = {
+  balanced: BALANCED_SYNTHESIS_REQUIREMENTS,
+  decision: [
+    ...BALANCED_SYNTHESIS_REQUIREMENTS,
+    "- 最終的な推奨判断を明確に示してください",
+    "- 判断理由と主要なトレードオフを短く説明してください",
+    "- 次に取るべき具体的なアクションを含めてください",
+  ],
+  critique: [
+    ...BALANCED_SYNTHESIS_REQUIREMENTS,
+    "- 両回答の強みと弱みを批判的に評価してください",
+    "- 不確かな点や検証が必要な前提を明示してください",
+    "- 改善された回答として不足を補ってください",
+  ],
+  concise: [
+    ...BALANCED_SYNTHESIS_REQUIREMENTS,
+    "- 要点だけを簡潔にまとめてください",
+    "- 可能な限り短く、余分な前置きや繰り返しを避けてください",
+    "- 必要な場合のみ箇条書きを使ってください",
+  ],
+};
+
+function getSynthesisRequirements(mode: SynthesisMode): string[] {
+  const requirements = SYNTHESIS_MODE_REQUIREMENTS[mode];
+  if (!requirements) {
+    throw new Error(`Unknown synthesis mode: ${mode}`);
+  }
+  return requirements;
+}
+
+function normalizeSynthesisInstructions(instructions?: string): string | undefined {
+  const trimmed = instructions?.trim();
+  if (!trimmed) return undefined;
+  if (trimmed.length > SYNTHESIS_INSTRUCTIONS_MAX_LENGTH) {
+    throw new RangeError(
+      `synthesis instructions must be ${SYNTHESIS_INSTRUCTIONS_MAX_LENGTH} characters or fewer`,
+    );
+  }
+  return trimmed;
+}
+
 export function formatResponsesMarkdown(result: TwinsRunResult): string {
   const lines = [
     "## pi-twins — model responses",
@@ -167,11 +220,15 @@ export function formatResponsesMarkdown(result: TwinsRunResult): string {
 }
 
 /** Build the synthesis instruction prompt (command handler injects this into Pi). */
-export function buildSynthesisPrompt(result: TwinsRunResult): string {
+export function buildSynthesisPrompt(
+  result: TwinsRunResult,
+  options: SynthesisPromptOptions = {},
+): string {
   const response1 = result.responseA ?? `[エラー: ${result.errorA ?? "応答なし"}]`;
   const response2 = result.responseB ?? `[エラー: ${result.errorB ?? "応答なし"}]`;
-
-  return [
+  const mode = options.mode ?? "balanced";
+  const instructions = normalizeSynthesisInstructions(options.instructions);
+  const lines = [
     "以下の2つの回答を読み、それぞれの最良部分を合成した1つの回答を書いてください。",
     "",
     `--- 回答1 (${result.modelA}) ---`,
@@ -181,10 +238,18 @@ export function buildSynthesisPrompt(result: TwinsRunResult): string {
     response2,
     "",
     "要件:",
-    "- 情報を統合し、矛盾を解消してください",
-    "- 冗長な部分は削除してください",
-    "- 1つの自然な回答として書いてください",
-  ].join("\n");
+    ...getSynthesisRequirements(mode),
+  ];
+
+  if (instructions) {
+    lines.push(
+      "",
+      `追加指示 (${SYNTHESIS_INSTRUCTIONS_MAX_LENGTH}文字以内):`,
+      instructions,
+    );
+  }
+
+  return lines.join("\n");
 }
 
 export async function synthesizeResponses(
@@ -192,9 +257,10 @@ export async function synthesizeResponses(
   registry: TwinsModelRegistry,
   synthesisModelId?: string,
   signal?: AbortSignal,
+  options: SynthesisPromptOptions = {},
 ): Promise<string> {
   const modelId = synthesisModelId ?? result.modelA;
-  const synthesisPrompt = buildSynthesisPrompt(result);
+  const synthesisPrompt = buildSynthesisPrompt(result, options);
   const synthesis = await runSingleModel(modelId, synthesisPrompt, registry, signal);
 
   if (synthesis.error || !synthesis.response) {

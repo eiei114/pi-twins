@@ -7,6 +7,7 @@ const {
   runTwins,
   runSingleModel,
 } = await import("../lib/runner.ts");
+const { SYNTHESIS_INSTRUCTIONS_MAX_LENGTH } = await import("../lib/schema.ts");
 
 test("runTwins runs both models in parallel via Promise.all", async () => {
   const calls = [];
@@ -101,6 +102,60 @@ test("buildSynthesisPrompt uses the issue template with model names", () => {
   assert.match(prompt, /回答2 \(google\/gemini-2.5-pro\)/);
   assert.match(prompt, /beta/);
   assert.match(prompt, /情報を統合し、矛盾を解消してください/);
+  assert.match(prompt, /冗長な部分は削除してください/);
+  assert.match(prompt, /1つの自然な回答として書いてください/);
+});
+
+const synthesisResult = {
+  modelA: "a/model",
+  modelB: "b/model",
+  prompt: "hello",
+  responseA: "alpha",
+  responseB: "beta",
+};
+
+test("buildSynthesisPrompt adds decision mode requirements", () => {
+  const prompt = buildSynthesisPrompt(synthesisResult, { mode: "decision" });
+
+  assert.match(prompt, /最終的な推奨判断を明確に示してください/);
+  assert.match(prompt, /主要なトレードオフ/);
+  assert.match(prompt, /具体的なアクション/);
+});
+
+test("buildSynthesisPrompt adds critique mode requirements", () => {
+  const prompt = buildSynthesisPrompt(synthesisResult, { mode: "critique" });
+
+  assert.match(prompt, /強みと弱みを批判的に評価してください/);
+  assert.match(prompt, /検証が必要な前提/);
+  assert.match(prompt, /不足を補ってください/);
+});
+
+test("buildSynthesisPrompt adds concise mode requirements", () => {
+  const prompt = buildSynthesisPrompt(synthesisResult, { mode: "concise" });
+
+  assert.match(prompt, /要点だけを簡潔にまとめてください/);
+  assert.match(prompt, /短く、余分な前置きや繰り返しを避けてください/);
+  assert.match(prompt, /必要な場合のみ箇条書き/);
+});
+
+test("buildSynthesisPrompt includes bounded instructions only when non-blank", () => {
+  const withInstructions = buildSynthesisPrompt(synthesisResult, {
+    instructions: "  Prefer numbered next steps.  ",
+  });
+  const withoutInstructions = buildSynthesisPrompt(synthesisResult, { instructions: "   \n\t  " });
+
+  assert.match(withInstructions, /追加指示/);
+  assert.match(withInstructions, /Prefer numbered next steps\./);
+  assert.doesNotMatch(withoutInstructions, /追加指示/);
+});
+
+test("buildSynthesisPrompt rejects overlong synthesis instructions with a clear limit", () => {
+  assert.throws(
+    () => buildSynthesisPrompt(synthesisResult, {
+      instructions: "x".repeat(SYNTHESIS_INSTRUCTIONS_MAX_LENGTH + 1),
+    }),
+    new RegExp(`${SYNTHESIS_INSTRUCTIONS_MAX_LENGTH} characters or fewer`),
+  );
 });
 
 test("buildSynthesisPrompt includes error placeholders when a model fails", () => {
