@@ -5,6 +5,7 @@ import test from "node:test";
 const packageJson = JSON.parse(await readFile(new URL("../package.json", import.meta.url), "utf8"));
 const readme = await readFile(new URL("../README.md", import.meta.url), "utf8");
 const changelog = await readFile(new URL("../CHANGELOG.md", import.meta.url), "utf8");
+const contributing = await readFile(new URL("../CONTRIBUTING.md", import.meta.url), "utf8");
 const autoReleaseWorkflow = await readFile(new URL("../.github/workflows/auto-release.yml", import.meta.url), "utf8");
 const publishWorkflow = await readFile(new URL("../.github/workflows/publish.yml", import.meta.url), "utf8");
 
@@ -27,6 +28,17 @@ test("README release flow matches auto-release handoff", () => {
   assert.ok(releaseBlock, "README should document a release command block");
   const commands = releaseBlock[1];
   assert.match(commands, /^npm version (patch|minor|major)/m);
+  assert.match(commands, /^git push$/m);
+  assert.doesNotMatch(commands, /push --tags/);
+});
+
+test("CONTRIBUTING release flow matches auto-release handoff", () => {
+  const releaseSection = contributing.match(/^## Release[\s\S]*$/m);
+  assert.ok(releaseSection, "CONTRIBUTING should have a Release section");
+  const releaseBlock = releaseSection[0].match(/```bash\n([\s\S]*?)```/);
+  assert.ok(releaseBlock, "CONTRIBUTING should document a release command block");
+  const commands = releaseBlock[1];
+  assert.match(commands, /^npm version patch$/m);
   assert.match(commands, /^git push$/m);
   assert.doesNotMatch(commands, /push --tags/);
 });
