@@ -38,9 +38,8 @@ test("CONTRIBUTING release flow matches auto-release handoff", () => {
   const releaseBlock = releaseSection[0].match(/```bash\n([\s\S]*?)```/);
   assert.ok(releaseBlock, "CONTRIBUTING should document a release command block");
   const commands = releaseBlock[1];
-  assert.match(commands, /^npm version patch$/m);
-  assert.match(commands, /^git push$/m);
-  assert.doesNotMatch(commands, /push --tags/);
+  assert.match(commands.trim(), /^npm version patch\r?\ngit push$/);
+  assert.doesNotMatch(commands, /push --(?:follow-tags|tags)\b/);
 });
 
 test("README development section does not duplicate pack:check", () => {
