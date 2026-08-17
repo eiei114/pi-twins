@@ -1,5 +1,6 @@
-import type { ExtensionAPI, ExtensionCommandContext } from "@earendil-works/pi-coding-agent";
+import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
 import { configExists, getConfigPath, loadConfig, writeDefaultConfig } from "../lib/config.ts";
+import { ensureConfig, resolvePair } from "../lib/extension-helpers.ts";
 import {
   buildSynthesisPrompt,
   formatResponsesMarkdown,
@@ -10,33 +11,6 @@ import {
 } from "../lib/runner.ts";
 import { groupByProvider } from "../lib/scanner.ts";
 import { DEFAULT_PAIR_NAME, TwinsRunToolParametersSchema } from "../lib/schema.ts";
-
-async function ensureConfig(ctx: ExtensionCommandContext): Promise<boolean> {
-  if (configExists()) return true;
-  ctx.ui.notify("No ~/.pi/twins.yaml found", "info");
-  const create = await ctx.ui.confirm("pi-twins config", "Create a default config at ~/.pi/twins.yaml?");
-  if (!create) {
-    ctx.ui.notify("Run /twins:scan to see available models, then create ~/.pi/twins.yaml manually", "info");
-    return false;
-  }
-  writeDefaultConfig();
-  ctx.ui.notify(`Created default config at: ${getConfigPath()}`, "info");
-  return true;
-}
-
-function resolvePair(config: ReturnType<typeof loadConfig>, pairName?: string): [string, string] {
-  const names = Object.keys(config.pairs);
-  if (names.length === 0) throw new Error("No pairs found in ~/.pi/twins.yaml");
-
-  const resolvedName =
-    pairName && config.pairs[pairName]
-      ? pairName
-      : config.pairs[DEFAULT_PAIR_NAME]
-        ? DEFAULT_PAIR_NAME
-        : names[0];
-
-  return config.pairs[resolvedName];
-}
 
 function resolveSynthesisOptions(
   config: ReturnType<typeof loadConfig>,
