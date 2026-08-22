@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 This project follows semantic versioning.
 
+## [0.3.1] - 2026-08-22
+
+### Changed
+
+- Merge the 2026-08-22 managed OSS dependency and maintenance PR batch.
+
 ## [0.3.0] - 2026-08-10
 
 ### Added
@@ -106,4 +112,3 @@ This project follows semantic versioning.
 - YAML configuration system with model pair definitions.
 - Agent state machine for sequential model calling (model A → model B → synthesis).
 - Error resilience: stale state timeout, model-not-found graceful fallback.
-
