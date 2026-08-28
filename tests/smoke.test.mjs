@@ -76,3 +76,11 @@ test("release workflow includes npm publish handoff", () => {
   assert.match(publishWorkflow, /workflow_dispatch:/);
   assert.match(publishWorkflow, /npm publish --access public/);
 });
+
+test("twins_run pair parameter description matches default-pair fallback behavior", async () => {
+  const { TwinsRunToolParametersSchema } = await import("../lib/schema.ts");
+  const pairDescription = TwinsRunToolParametersSchema.properties.pair.description;
+  assert.match(pairDescription, /default pair when present/i);
+  assert.match(pairDescription, /first configured pair/i);
+  assert.doesNotMatch(pairDescription, /defaults to first pair/i);
+});
