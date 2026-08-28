@@ -48,7 +48,9 @@ export type TwinsConfig = Static<typeof TwinsConfigSchema>;
 /** Tool parameters for twins_run. */
 export const TwinsRunToolParametersSchema = Type.Object({
   prompt: Type.String({ description: "The question or task to ask both models" }),
-  pair: Type.Optional(Type.String({ description: "Pair name from ~/.pi/twins.yaml (defaults to first pair)" })),
+  pair: Type.Optional(Type.String({
+    description: "Pair name from ~/.pi/twins.yaml (defaults to the default pair when present, otherwise the first configured pair)",
+  })),
   synthesisMode: Type.Optional(SynthesisModeSchema),
   synthesisInstructions: Type.Optional(Type.String({
     maxLength: SYNTHESIS_INSTRUCTIONS_MAX_LENGTH,
