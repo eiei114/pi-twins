@@ -1,11 +1,24 @@
 import assert from "node:assert/strict";
-import test from "node:test";
+import { mock, test } from "node:test";
+
+const SYNTHESIS_TEXT = "Combined synthesized answer.";
+
+mock.module("@earendil-works/pi-ai", {
+  exports: {
+    completeSimple: async () => ({
+      stopReason: "stop",
+      content: [{ type: "text", text: SYNTHESIS_TEXT }],
+    }),
+  },
+});
 
 const {
   buildSynthesisPrompt,
   formatResponsesMarkdown,
+  formatTwinsMarkdown,
   runTwins,
   runSingleModel,
+  synthesizeResponses,
 } = await import("../lib/runner.ts");
 const { SYNTHESIS_INSTRUCTIONS_MAX_LENGTH } = await import("../lib/schema.ts");
 
@@ -169,4 +182,68 @@ test("buildSynthesisPrompt includes error placeholders when a model fails", () =
 
   assert.match(prompt, /only one/);
   assert.match(prompt, /\[エラー: down\]/);
+});
+
+const fullSuccessResult = {
+  modelA: "test/model-a",
+  modelB: "test/model-b",
+  prompt: "hello",
+  responseA: "alpha",
+  responseB: "beta",
+};
+
+const partialFailureResult = {
+  modelA: "test/model-a",
+  modelB: "test/model-b",
+  prompt: "hello",
+  responseA: "alpha",
+  errorB: "provider timeout",
+};
+
+function makeSynthesisRegistry(overrides = {}) {
+  const fakeModel = { provider: "test", id: "model" };
+  return {
+    find: overrides.find ?? (() => fakeModel),
+    getApiKeyAndHeaders:
+      overrides.getApiKeyAndHeaders ?? (async () => ({ ok: true, apiKey: "test-key" })),
+  };
+}
+
+test("formatTwinsMarkdown combines model responses and synthesis sections", () => {
+  const markdown = formatTwinsMarkdown(fullSuccessResult, SYNTHESIS_TEXT);
+
+  assert.match(markdown, /## pi-twins — model responses/);
+  assert.match(markdown, /alpha/);
+  assert.match(markdown, /beta/);
+  assert.match(markdown, /\*\*Synthesis\*\*/);
+  assert.match(markdown, new RegExp(SYNTHESIS_TEXT));
+});
+
+test("formatTwinsMarkdown includes failed model error in responses section", () => {
+  const markdown = formatTwinsMarkdown(partialFailureResult, "partial synthesis");
+
+  assert.match(markdown, /provider timeout/);
+  assert.match(markdown, /\*\*Synthesis\*\*/);
+  assert.match(markdown, /partial synthesis/);
+});
+
+test("synthesizeResponses returns synthesis text on success", async () => {
+  const result = await synthesizeResponses(fullSuccessResult, makeSynthesisRegistry());
+  assert.equal(result, SYNTHESIS_TEXT);
+});
+
+test("synthesizeResponses succeeds when one twin model failed", async () => {
+  const result = await synthesizeResponses(partialFailureResult, makeSynthesisRegistry());
+  assert.equal(result, SYNTHESIS_TEXT);
+});
+
+test("synthesizeResponses throws when synthesis model fails", async () => {
+  const registry = makeSynthesisRegistry({
+    find: () => undefined,
+  });
+
+  await assert.rejects(
+    () => synthesizeResponses(fullSuccessResult, registry),
+    /Model not found: test\/model-a/,
+  );
 });
