@@ -37,6 +37,7 @@ It is intentionally short, opinionated, and seed-oriented — not a feature wish
 
 - **M-2** — `resolvePair` / `ensureConfig` tests (`extensions-helpers.test.mjs`, DOT-1545).
 - **M-3** — `synthesizeResponses` + `formatTwinsMarkdown` tests (`runner.test.mjs`, #45).
+- **M-7** — Type `twins_run` tool return (`lib/twins-run-tool.ts`, DOT-1729).
 
 ### Known housekeeping (low priority)
 
@@ -74,8 +75,7 @@ history, or a hosted service.
 
 Close the remaining documentation and typing gaps without changing default twin-run
 behavior. Primary targets: user-facing troubleshooting guide (M-4), a short
-architecture note for the run → synthesize flow (M-9), and removing `as any` from
-the `twins_run` tool return type (M-7). These are low-risk and suitable for a patch
+architecture note for the run → synthesize flow (M-9). These are low-risk and suitable for a patch
 bump once at least one doc seed lands.
 
 ### v0.4.0 — small UX improvements (minor)
@@ -100,7 +100,6 @@ Seeds are tagged by area: `docs` · `tests` · `refactor` · `feature` · `chore
 | M-4 | Add `docs/troubleshooting.md` (common errors → fixes) | docs | ~45–60m | v0.3.2 | Users hit config/model/spawn errors with no mapped fixes; README docs section is thin. |
 | M-5 | Interactive pair picker for `/twins:run` | feature | ~45–75m | v0.4.0 | Multi-pair configs silently use the first pair; explicit selection reduces surprise. |
 | M-6 | Configurable synthesis prompt language (EN default, JA option) | feature | ~60–90m | v0.4.0 | `buildSynthesisPrompt` is always Japanese; English-first configs need an opt-in path. |
-| M-7 | Type `twins_run` tool return (remove `as any`) | refactor | ~30–45m | v0.3.2 | Tool handler casts to `any`; proper typing catches regressions before publish. |
 | M-8 | Localize `/twins:run` completion message | chore | ~30m | v0.3.2 | Hardcoded `"完了"` is inconsistent with EN synthesis defaults planned in M-6. |
 | M-9 | Add `docs/architecture.md` (run → synthesize flow) | docs | ~45–60m | v0.3.2 | New contributors lack a one-page map of `extensions/` → `lib/runner.ts` → synthesis. |
 

@@ -4,26 +4,11 @@ import { ensureConfig, resolvePair } from "../lib/extension-helpers.ts";
 import {
   buildSynthesisPrompt,
   formatResponsesMarkdown,
-  formatTwinsMarkdown,
   runTwins,
-  synthesizeResponses,
-  type SynthesisPromptOptions,
 } from "../lib/runner.ts";
 import { groupByProvider } from "../lib/scanner.ts";
-import { DEFAULT_PAIR_NAME, TwinsRunToolParametersSchema } from "../lib/schema.ts";
-
-function resolveSynthesisOptions(
-  config: ReturnType<typeof loadConfig>,
-  overrides: {
-    synthesisMode?: SynthesisPromptOptions["mode"];
-    synthesisInstructions?: string;
-  } = {},
-): SynthesisPromptOptions {
-  return {
-    mode: overrides.synthesisMode ?? config.synthesis?.mode,
-    instructions: overrides.synthesisInstructions ?? config.synthesis?.instructions,
-  };
-}
+import { DEFAULT_PAIR_NAME } from "../lib/schema.ts";
+import { resolveSynthesisOptions, twinsRunTool } from "../lib/twins-run-tool.ts";
 
 export default function (pi: ExtensionAPI) {
   pi.registerCommand("twins:scan", {
@@ -136,41 +121,5 @@ export default function (pi: ExtensionAPI) {
     },
   });
 
-  pi.registerTool({
-    name: "twins_run",
-    label: "Twins Run",
-    description: "Run a prompt on two configured models and return a synthesized result",
-    promptSnippet: "twins_run: run the same prompt on two configured models and synthesize the responses",
-    promptGuidelines: [
-      "Use twins_run when a decision benefits from multiple model perspectives.",
-      "The pair name comes from ~/.pi/twins.yaml.",
-      "Returns both raw model responses and the final synthesis.",
-    ],
-    parameters: TwinsRunToolParametersSchema,
-    async execute(_toolCallId, params, signal, _onUpdate, ctx) {
-      try {
-        const config = loadConfig();
-        const pair = resolvePair(config, params.pair);
-        const synthesisOptions = resolveSynthesisOptions(config, params);
-
-        const result = await runTwins(params.prompt, pair, ctx.modelRegistry, { signal });
-        if (!result.responseA && !result.responseB) {
-          throw new Error("Both models failed");
-        }
-
-        const synthesis = await synthesizeResponses(result, ctx.modelRegistry, pair[0], signal, synthesisOptions);
-        return {
-          content: [{ type: "text", text: formatTwinsMarkdown(result, synthesis) }],
-          details: { pair, modelA: result.modelA, modelB: result.modelB },
-        } as any;
-      } catch (error) {
-        const message = error instanceof Error ? error.message : String(error);
-        return {
-          content: [{ type: "text", text: `pi-twins error: ${message}` }],
-          details: { error: true },
-          isError: true,
-        } as any;
-      }
-    },
-  });
+  pi.registerTool(twinsRunTool);
 }
