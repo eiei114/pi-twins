@@ -139,17 +139,6 @@ gate behind v0.4.0.
   option; `buildSynthesisPrompt` honors it; tests for both languages;
   `docs/examples.md` updated; `npm run ci` green.
 
-### M-7 — Type `twins_run` tool return
-
-The `twins_run` execute handler returns `{ ... } as any` on success and error
-paths. Define a small result type aligned with Pi's tool return shape and remove
-the casts.
-
-- **Why**: `as any` hides shape drift between `formatTwinsMarkdown` output and
-  what Pi expects; cheap to fix now that M-3 tests cover formatting paths.
-- **Acceptance**: no `as any` in `extensions/index.ts` tool handler; typecheck
-  passes; `npm run ci` green; no runtime behavior change.
-
 ### M-8 — Localize `/twins:run` completion message
 
 Replace the hardcoded `"完了"` completion message in `/twins:run` with a neutral
