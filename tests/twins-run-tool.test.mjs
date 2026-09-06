@@ -4,6 +4,7 @@ import test from "node:test";
 const {
   buildTwinsRunSuccessResult,
   buildTwinsRunErrorResult,
+  formatBothModelsFailedMessage,
   resolveSynthesisOptions,
 } = await import("../lib/twins-run-tool.ts");
 
@@ -39,6 +40,28 @@ test("buildTwinsRunErrorResult marks isError and returns error details", () => {
   assert.equal(toolResult.content[0].type, "text");
   assert.match(toolResult.content[0].text, /Both models failed/);
   assert.deepEqual(toolResult.details, { error: true });
+});
+
+test("formatBothModelsFailedMessage aggregates model-specific provider errors", () => {
+  assert.equal(
+    formatBothModelsFailedMessage({
+      modelA: "anthropic/claude-sonnet-4",
+      modelB: "google/gemini-2.5-pro",
+      prompt: "hello",
+      errorA: "rate limit",
+      errorB: "provider timeout",
+    }),
+    "anthropic/claude-sonnet-4: rate limit; google/gemini-2.5-pro: provider timeout",
+  );
+
+  assert.equal(
+    formatBothModelsFailedMessage({
+      modelA: "anthropic/claude-sonnet-4",
+      modelB: "google/gemini-2.5-pro",
+      prompt: "hello",
+    }),
+    "Both models failed",
+  );
 });
 
 test("resolveSynthesisOptions merges config defaults with per-call overrides", () => {
