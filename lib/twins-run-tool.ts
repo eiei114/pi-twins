@@ -63,6 +63,17 @@ export function buildTwinsRunErrorResult(message: string): TwinsRunToolResult {
   };
 }
 
+export function formatBothModelsFailedMessage(result: TwinsRunResult): string {
+  return (
+    [
+      result.errorA ? `${result.modelA}: ${result.errorA}` : undefined,
+      result.errorB ? `${result.modelB}: ${result.errorB}` : undefined,
+    ]
+      .filter(Boolean)
+      .join("; ") || "Both models failed"
+  );
+}
+
 export const twinsRunTool = defineTool({
   name: "twins_run",
   label: "Twins Run",
@@ -82,7 +93,7 @@ export const twinsRunTool = defineTool({
 
       const result = await runTwins(params.prompt, pair, ctx.modelRegistry, { signal });
       if (!result.responseA && !result.responseB) {
-        throw new Error("Both models failed");
+        throw new Error(formatBothModelsFailedMessage(result));
       }
 
       const synthesis = await synthesizeResponses(
