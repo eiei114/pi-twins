@@ -122,7 +122,7 @@ The `twins_run` tool is also available for agent-driven twin runs. Tool calls ma
 |---|---|
 | `extensions/` | Pi extension entrypoints (`/twins:*` commands, `twins_run` tool) |
 | `lib/` | Config loader, model scanner, parallel runner, synthesis helpers |
-| `docs/` | Usage examples and release notes |
+| `docs/` | Usage examples, troubleshooting, and release notes |
 
 ## Development
 
@@ -155,6 +155,7 @@ See [`docs/release.md`](docs/release.md) for setup details.
 ## Docs
 
 - [`docs/examples.md`](docs/examples.md) — command and tool examples
+- [`docs/troubleshooting.md`](docs/troubleshooting.md) — common errors and fixes
 - [`docs/release.md`](docs/release.md) — Trusted Publishing details
 
 ## Security
