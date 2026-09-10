@@ -6,6 +6,7 @@ const packageJson = JSON.parse(await readFile(new URL("../package.json", import.
 const readme = await readFile(new URL("../README.md", import.meta.url), "utf8");
 const changelog = await readFile(new URL("../CHANGELOG.md", import.meta.url), "utf8");
 const contributing = await readFile(new URL("../CONTRIBUTING.md", import.meta.url), "utf8");
+const examples = await readFile(new URL("../docs/examples.md", import.meta.url), "utf8");
 const autoReleaseWorkflow = await readFile(new URL("../.github/workflows/auto-release.yml", import.meta.url), "utf8");
 const publishWorkflow = await readFile(new URL("../.github/workflows/publish.yml", import.meta.url), "utf8");
 
@@ -83,4 +84,20 @@ test("twins_run pair parameter description matches default-pair fallback behavio
   assert.match(pairDescription, /default pair when present/i);
   assert.match(pairDescription, /first configured pair/i);
   assert.doesNotMatch(pairDescription, /defaults to first pair/i);
+});
+
+test("docs/examples local development flow matches CI gate", () => {
+  const localDevBlock = examples.match(/^## Local development[\s\S]*?```bash\n([\s\S]*?)```/m);
+  assert.ok(localDevBlock, "docs/examples.md should document a local development command block");
+  const commands = localDevBlock[1];
+  assert.match(commands, /^npm install$/m);
+  assert.match(commands, /^npm run ci$/m);
+  assert.match(commands, /^pi -e \.$/m);
+});
+
+test("docs/examples links troubleshooting and documents pair fallback", () => {
+  assert.match(examples, /docs\/troubleshooting\.md/);
+  assert.match(examples, /`default` pair is used when present/i);
+  assert.match(examples, /first configured pair/i);
+  assert.match(examples, /balanced \| decision \| critique \| concise/);
 });
