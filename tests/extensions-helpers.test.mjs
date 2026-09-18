@@ -73,7 +73,13 @@ test("resolvePair falls back to first pair when default pair is absent", () => {
 test("resolvePair throws when config has no pairs", () => {
   const config = makeConfig({});
 
-  assert.throws(() => resolvePair(config), /No pairs found/);
+  assert.throws(
+    () => resolvePair(config),
+    (error) => {
+      assert.equal(error.message, "No pairs found in ~/.pi/twins.yaml");
+      return true;
+    },
+  );
 });
 
 test("ensureConfig returns true when config already exists", async () => {

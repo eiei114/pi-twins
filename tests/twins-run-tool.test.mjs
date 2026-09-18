@@ -42,6 +42,18 @@ test("buildTwinsRunErrorResult marks isError and returns error details", () => {
   assert.deepEqual(toolResult.details, { error: true });
 });
 
+test("buildTwinsRunErrorResult surfaces pair-resolution failure messaging", () => {
+  const message = 'Pair "missing" not found in config. Available: default, coding';
+  const toolResult = buildTwinsRunErrorResult(message);
+
+  assert.equal(toolResult.isError, true);
+  assert.equal(
+    toolResult.content[0].text,
+    `pi-twins error: ${message}`,
+  );
+  assert.deepEqual(toolResult.details, { error: true });
+});
+
 test("formatBothModelsFailedMessage aggregates model-specific provider errors", () => {
   assert.equal(
     formatBothModelsFailedMessage({
