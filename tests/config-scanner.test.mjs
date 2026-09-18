@@ -186,9 +186,41 @@ test("getPair throws when pair name is missing", async () => {
   default:
     - anthropic/claude-sonnet-4
     - google/gemini-2.5-pro
+  coding:
+    - openai/gpt-4o
+    - deepseek/deepseek-r1
 `;
   await withTempConfig(yaml, async (configPath) => {
-    assert.throws(() => getPair("missing", configPath), /Pair "missing" not found/);
+    assert.throws(
+      () => getPair("missing", configPath),
+      (error) => {
+        assert.equal(
+          error.message,
+          'Pair "missing" not found in config. Available: default, coding',
+        );
+        return true;
+      },
+    );
+  });
+});
+
+test("getPair failure message names default when no pair name is given", async () => {
+  const yaml = `pairs:
+  coding:
+    - openai/gpt-4o
+    - deepseek/deepseek-r1
+`;
+  await withTempConfig(yaml, async (configPath) => {
+    assert.throws(
+      () => getPair(undefined, configPath),
+      (error) => {
+        assert.equal(
+          error.message,
+          'Pair "default" not found in config. Available: coding',
+        );
+        return true;
+      },
+    );
   });
 });
 
