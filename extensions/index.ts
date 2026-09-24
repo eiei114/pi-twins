@@ -1,13 +1,12 @@
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
 import { configExists, getConfigPath, loadConfig, writeDefaultConfig } from "../lib/config.ts";
-import { ensureConfig, resolvePair } from "../lib/extension-helpers.ts";
+import { ensureConfig, selectPair } from "../lib/extension-helpers.ts";
 import {
   buildSynthesisPrompt,
   formatResponsesMarkdown,
   runTwins,
 } from "../lib/runner.ts";
 import { groupByProvider } from "../lib/scanner.ts";
-import { DEFAULT_PAIR_NAME } from "../lib/schema.ts";
 import { resolveSynthesisOptions, twinsRunTool } from "../lib/twins-run-tool.ts";
 
 export default function (pi: ExtensionAPI) {
@@ -59,14 +58,11 @@ export default function (pi: ExtensionAPI) {
         if (!prompt?.trim()) return;
 
         const config = loadConfig();
-        const pair = resolvePair(config);
-        const pairNames = Object.keys(config.pairs);
-        if (pairNames.length > 1) {
-          const usedName =
-            config.pairs[DEFAULT_PAIR_NAME] && pair === config.pairs[DEFAULT_PAIR_NAME]
-              ? DEFAULT_PAIR_NAME
-              : pairNames.find((name) => config.pairs[name] === pair) ?? pairNames[0];
-          ctx.ui.notify(`Using pi-twins pair: ${usedName}`, "info");
+        const selection = await selectPair(config, (title, options) => ctx.ui.select(title, options));
+        if (!selection) return;
+        const { name: pairName, pair } = selection;
+        if (Object.keys(config.pairs).length > 1) {
+          ctx.ui.notify(`Using pi-twins pair: ${pairName}`, "info");
         }
 
         ctx.ui.setStatus("twins", `Running ${pair[0]} + ${pair[1]}...`);
