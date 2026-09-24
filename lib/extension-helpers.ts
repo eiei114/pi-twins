@@ -16,6 +16,28 @@ export function resolvePair(config: TwinsConfig, pairName?: string): [string, st
   return config.pairs[resolvedName];
 }
 
+export type PairSelection = {
+  name: string;
+  pair: [string, string];
+};
+
+export async function selectPair(
+  config: TwinsConfig,
+  select: (title: string, options: string[]) => Promise<string | undefined>,
+): Promise<PairSelection | undefined> {
+  const names = Object.keys(config.pairs);
+  if (names.length === 0) throw new Error("No pairs found in ~/.pi/twins.yaml");
+
+  if (names.length === 1 || config.pairs[DEFAULT_PAIR_NAME]) {
+    const name = config.pairs[DEFAULT_PAIR_NAME] ? DEFAULT_PAIR_NAME : names[0];
+    return { name, pair: config.pairs[name] };
+  }
+
+  const name = await select("Select a pi-twins pair", names);
+  if (!name) return undefined;
+  return { name, pair: config.pairs[name] };
+}
+
 export async function ensureConfig(
   ctx: ExtensionCommandContext,
   configPath?: string,

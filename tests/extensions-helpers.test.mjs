@@ -4,7 +4,7 @@ import { join } from "node:path";
 import { tmpdir } from "node:os";
 import test from "node:test";
 
-const { resolvePair, ensureConfig } = await import("../lib/extension-helpers.ts");
+const { resolvePair, selectPair, ensureConfig } = await import("../lib/extension-helpers.ts");
 const { configExists } = await import("../lib/config.ts");
 const { DEFAULT_PAIR_NAME } = await import("../lib/schema.ts");
 
@@ -68,6 +68,47 @@ test("resolvePair falls back to first pair when default pair is absent", () => {
   });
 
   assert.deepEqual(resolvePair(config), ["openai/gpt-4o", "deepseek/deepseek-r1"]);
+});
+
+test("selectPair prompts when multiple pairs exist without a default", async () => {
+  const config = makeConfig({
+    coding: ["openai/gpt-4o", "deepseek/deepseek-r1"],
+    review: ["anthropic/claude-sonnet-4", "google/gemini-2.5-pro"],
+  });
+  const selections = [];
+
+  const selection = await selectPair(config, async (title, options) => {
+    selections.push({ title, options });
+    return "review";
+  });
+
+  assert.deepEqual(selection, {
+    name: "review",
+    pair: ["anthropic/claude-sonnet-4", "google/gemini-2.5-pro"],
+  });
+  assert.deepEqual(selections, [{
+    title: "Select a pi-twins pair",
+    options: ["coding", "review"],
+  }]);
+});
+
+test("selectPair preserves default selection without prompting", async () => {
+  const config = makeConfig({
+    default: ["anthropic/claude-sonnet-4", "google/gemini-2.5-pro"],
+    coding: ["openai/gpt-4o", "deepseek/deepseek-r1"],
+  });
+  let prompted = false;
+
+  const selection = await selectPair(config, async () => {
+    prompted = true;
+    return "coding";
+  });
+
+  assert.deepEqual(selection, {
+    name: "default",
+    pair: ["anthropic/claude-sonnet-4", "google/gemini-2.5-pro"],
+  });
+  assert.equal(prompted, false);
 });
 
 test("resolvePair throws when config has no pairs", () => {
