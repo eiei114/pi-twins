@@ -17,7 +17,7 @@ It is intentionally short, opinionated, and seed-oriented — not a feature wish
 
 | Item | Value |
 |---|---|
-| Latest release | **v0.3.1** (2026-08-22) — dependency/maintenance patch |
+| Latest release | **0.3.6** (2026-08-22) — dependency/maintenance patch |
 | `package.json` version | `0.3.1` (in sync with npm) |
 | npm latest | `0.3.1` |
 | Next planned | **v0.3.2** (patch — docs/tests) or **v0.4.0** (minor — UX) |
