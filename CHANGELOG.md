@@ -1,8 +1,10 @@
 # Changelog
 
-## Unreleased
+All notable changes to this project will be documented in this file.
 
-## [Unreleased]
+This project follows semantic versioning.
+
+## Unreleased
 
 ## [0.3.6] - 2026-09-27
 
@@ -15,6 +17,22 @@
 All notable changes to this project will be documented in this file.
 
 This project follows semantic versioning.
+## [0.3.5] - 2026-09-28
+
+- chore: periodic patch bump after 7+ days without npm publish
+
+## [0.3.4] - 2026-09-28
+
+- chore: periodic patch bump after 7+ days without npm publish
+
+## [0.3.3] - 2026-09-28
+
+- chore: periodic patch bump after 7+ days without npm publish
+
+## [0.3.2] - 2026-09-28
+
+- chore: periodic patch bump after 7+ days without npm publish
+
 ## [0.3.1] - 2026-08-22
 
 ### Changed
