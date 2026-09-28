@@ -3,7 +3,7 @@ import { readFile } from "node:fs/promises";
 import test from "node:test";
 
 const packageJson = JSON.parse(await readFile(new URL("../package.json", import.meta.url), "utf8"));
-const readme = await readFile(new URL("../README.md", import.meta.url), "utf8");
+const readme = (await readFile(new URL("../README.md", import.meta.url), "utf8")).replace(/\r\n/g, "\n");
 const changelog = await readFile(new URL("../CHANGELOG.md", import.meta.url), "utf8");
 const contributing = await readFile(new URL("../CONTRIBUTING.md", import.meta.url), "utf8");
 const examples = await readFile(new URL("../docs/examples.md", import.meta.url), "utf8");
