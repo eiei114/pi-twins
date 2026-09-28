@@ -97,7 +97,7 @@ export function loadConfig(configPath?: string): TwinsConfig {
     throw new Error(
       formatValidationError(
         path,
-        'expected a "pairs" object mapping names to [modelA, modelB] tuples',
+        'expected a "pairs" object mapping names to [modelA, modelB] tuples. Run /twins:scan and update ~/.pi/twins.yaml with valid provider/model IDs.',
       ),
     );
   }

@@ -129,13 +129,21 @@ test("loadConfig reads and validates YAML config", async () => {
   });
 });
 
-test("loadConfig rejects invalid YAML shape", async () => {
+test("loadConfig rejects an incomplete pair with a repair path", async () => {
   const yaml = `pairs:
   default:
     - only-one-model
 `;
   await withTempConfig(yaml, async (configPath) => {
-    assert.throws(() => loadConfig(configPath), /Invalid pi-twins config/);
+    assert.throws(
+      () => loadConfig(configPath),
+      (error) => {
+        assert.match(error.message, /Invalid pi-twins config/);
+        assert.match(error.message, /\/twins:scan/);
+        assert.match(error.message, /~\/\.pi\/twins\.yaml/);
+        return true;
+      },
+    );
   });
 });
 
