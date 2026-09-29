@@ -42,8 +42,10 @@ export interface RunModelOptions {
 
 function splitModelId(fullId: string): [string, string] {
   const idx = fullId.indexOf("/");
-  if (idx === -1) {
-    throw new Error(`Invalid model id "${fullId}" (expected provider/model-id)`);
+  if (idx === -1 || idx === 0 || idx === fullId.length - 1) {
+    throw new Error(
+      `Invalid model id "${fullId}" (expected provider/model-id). Run /twins:scan and update ~/.pi/twins.yaml.`,
+    );
   }
   return [fullId.slice(0, idx), fullId.slice(idx + 1)];
 }
@@ -74,7 +76,10 @@ export async function runSingleModel(
 
   const model = registry.find(provider, modelId);
   if (!model) {
-    return { model: fullId, error: `Model not found: ${fullId}` };
+    return {
+      model: fullId,
+      error: `Model not found: ${fullId}. Run /twins:scan and update ~/.pi/twins.yaml.`,
+    };
   }
 
   try {

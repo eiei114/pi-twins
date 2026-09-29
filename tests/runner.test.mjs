@@ -78,13 +78,26 @@ test("runTwins returns success and error when one model fails", async () => {
   assert.equal(result.responseB, undefined);
 });
 
-test("runSingleModel returns error for invalid model id", async () => {
+test("runSingleModel identifies the repair path for an incomplete model id", async () => {
   const result = await runSingleModel("invalid-id", "hello", {
     find: () => undefined,
     getApiKeyAndHeaders: async () => ({ ok: false, error: "unused" }),
   });
 
   assert.match(result.error || "", /Invalid model id/);
+  assert.match(result.error || "", /\/twins:scan/);
+  assert.match(result.error || "", /~\/\.pi\/twins\.yaml/);
+});
+
+test("runSingleModel identifies the repair path for an unknown configured model", async () => {
+  const result = await runSingleModel("unknown/model", "hello", {
+    find: () => undefined,
+    getApiKeyAndHeaders: async () => ({ ok: false, error: "unused" }),
+  });
+
+  assert.match(result.error || "", /Model not found: unknown\/model/);
+  assert.match(result.error || "", /\/twins:scan/);
+  assert.match(result.error || "", /~\/\.pi\/twins\.yaml/);
 });
 
 test("formatResponsesMarkdown includes successful and failed sides", () => {
