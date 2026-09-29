@@ -140,7 +140,8 @@ test("loadConfig rejects an incomplete pair with a repair path", async () => {
       (error) => {
         assert.match(error.message, /Invalid pi-twins config/);
         assert.match(error.message, /\/twins:scan/);
-        assert.match(error.message, /~\/\.pi\/twins\.yaml/);
+        assert.ok(error.message.includes(`update ${configPath}`));
+        assert.doesNotMatch(error.message, /~\/\.pi\/twins\.yaml/);
         return true;
       },
     );

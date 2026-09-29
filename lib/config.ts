@@ -94,10 +94,11 @@ export function loadConfig(configPath?: string): TwinsConfig {
   validateSynthesisConfigDetails(path, parsed);
 
   if (!Check(TwinsConfigSchema, parsed)) {
+    const repairPath = configPath === undefined ? "~/.pi/twins.yaml" : path;
     throw new Error(
       formatValidationError(
         path,
-        'expected a "pairs" object mapping names to [modelA, modelB] tuples. Run /twins:scan and update ~/.pi/twins.yaml with valid provider/model IDs.',
+        `expected a "pairs" object mapping names to [modelA, modelB] tuples. Run /twins:scan and update ${repairPath} with valid provider/model IDs.`,
       ),
     );
   }
