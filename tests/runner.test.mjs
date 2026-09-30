@@ -3,7 +3,7 @@ import { mock, test } from "node:test";
 
 const SYNTHESIS_TEXT = "Combined synthesized answer.";
 
-mock.module("@earendil-works/pi-ai", {
+mock.module("@earendil-works/pi-ai/compat", {
   exports: {
     completeSimple: async () => ({
       stopReason: "stop",

@@ -37,7 +37,7 @@ pi install npm:pi-twins
 Pin a specific version:
 
 ```bash
-pi install npm:pi-twins@0.3.6
+pi install npm:pi-twins@0.3.7
 ```
 
 Install into the current project instead of your user Pi settings:
