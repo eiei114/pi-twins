@@ -1,6 +1,6 @@
 {
   "name": "pi-twins",
-  "version": "0.3.6",
+  "version": "0.3.7",
   "description": "Dual-model synthesis for Pi — run the same prompt on two models, get one synthesized answer",
   "type": "module",
   "license": "MIT",
@@ -51,9 +51,9 @@
     "typebox": "*"
   },
   "devDependencies": {
-    "@earendil-works/pi-ai": "latest",
-    "@earendil-works/pi-coding-agent": "latest",
-    "@earendil-works/pi-tui": "latest",
+    "@earendil-works/pi-ai": "^0.99.1",
+    "@earendil-works/pi-coding-agent": "^0.99.1",
+    "@earendil-works/pi-tui": "^0.99.1",
     "@types/node": "^26.1.0",
     "typebox": "latest",
     "typescript": "^7.0.2"

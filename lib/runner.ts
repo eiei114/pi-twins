@@ -1,15 +1,16 @@
 import {
-  completeSimple,
   type Api,
   type Model,
+  type ProviderHeaders,
   type UserMessage,
 } from "@earendil-works/pi-ai";
+import { completeSimple } from "@earendil-works/pi-ai/compat";
 import { SYNTHESIS_INSTRUCTIONS_MAX_LENGTH, type SynthesisMode } from "./schema.ts";
 
 export interface TwinsModelRegistry {
   find(provider: string, modelId: string): Model<Api> | undefined;
   getApiKeyAndHeaders(model: Model<Api>): Promise<
-    | { ok: true; apiKey?: string; headers?: Record<string, string> }
+    | { ok: true; apiKey?: string; headers?: ProviderHeaders }
     | { ok: false; error: string }
   >;
 }
