@@ -21,6 +21,7 @@ After `pi -e .` (or `pi install npm:pi-twins`), configure a pair before your fir
 1. `/twins:config` — create or show `~/.pi/twins.yaml`
 2. `/twins:scan` — list valid model IDs grouped by provider
 3. Edit `~/.pi/twins.yaml` if needed, then `/twins:run`
+4. If you configured multiple pairs without a `default` pair, choose the pair from the picker.
 
 If config is missing, `/twins:run` offers to create a starter file. See [`docs/troubleshooting.md`](troubleshooting.md) when setup or runs fail.
 
@@ -32,7 +33,7 @@ Run the command, then enter a prompt:
 /twins:run
 ```
 
-Pi sends the prompt to both models in your configured pair, then synthesizes one answer. With multiple pairs, the `default` pair is used when present; otherwise pi-twins uses the first configured pair.
+Pi sends the prompt to both models in your configured pair, then synthesizes one answer. The `default` pair is used when present. If there is no `default` and multiple pairs are configured, select a pair in the picker; a single pair is selected automatically.
 
 ## `/twins:scan`
 
