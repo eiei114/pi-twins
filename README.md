@@ -93,7 +93,7 @@ synthesis:
   instructions: "Prioritize concrete next steps."
 ```
 
-`/twins:run` uses the `default` pair when present. If `default` is missing, it falls back to the first configured pair. The optional top-level `synthesis` block sets reusable defaults for the final answer; existing configs with only `pairs:` keep the balanced behavior.
+`/twins:run` uses the `default` pair when present. If `default` is missing and multiple pairs are configured, it prompts you to choose one; with a single pair, that pair is used automatically. The optional top-level `synthesis` block sets reusable defaults for the final answer; existing configs with only `pairs:` keep the balanced behavior.
 
 Run `/twins:config` to create a starter file, or `/twins:scan` to list model IDs.
 
