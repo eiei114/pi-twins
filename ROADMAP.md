@@ -17,32 +17,33 @@ It is intentionally short, opinionated, and seed-oriented — not a feature wish
 
 | Item | Value |
 |---|---|
-| Latest release | **0.3.7** (2026-09-30) — Pi SDK 0.99.1 dependency update |
-| `package.json` version | `0.3.7` (in sync with npm) |
-| npm latest | `0.3.1` |
-| Next planned | **v0.3.2** (patch — docs/tests) or **v0.4.0** (minor — UX) |
+| Repository package version | **0.3.7** (2026-09-30) — Pi SDK 0.99.1 dependency update |
+| Registry status | Not verified from this checkout; do not infer npm freshness from the repository version. |
+| Next maintenance target | **v0.3.8** (patch — completion UX and documentation) |
 | CI | `npm run ci` = typecheck + `node --test` + `npm pack --dry-run` |
 | Release mechanism | npm Trusted Publishing via `auto-release.yml` → `publish.yml` |
 
 **Recent trajectory** (see [`CHANGELOG.md`](CHANGELOG.md) for detail):
 
-- `v0.3.1` — merged 2026-08-22 managed OSS dependency and maintenance PR batch.
-- `v0.3.0` — optional synthesis controls (`balanced`, `decision`, `critique`, `concise`) with bounded per-call instructions (DOT-1436).
-- `v0.2.4` — scanner catalog pruned to real model IDs (M-1, DOT-1312); README/docs alignment and dev-dependency bumps.
-- `v0.2.x` — hygiene/docs/tests patch window; README sponsor button and install-path alignment.
-- `v0.2.0` — parallel dual-model runner + Pi synthesis orchestration (`lib/runner.ts`, DOT-224).
+- `v0.3.7` — updated the Pi SDK dependencies to 0.99.1.
+- `v0.3.0` — added synthesis controls (`balanced`, `decision`, `critique`, `concise`) with bounded instructions (DOT-1436).
+- `v0.2.4` — pruned the scanner catalog and aligned README/docs with the release workflow.
+- `v0.2.0` — added the parallel dual-model runner and Pi synthesis orchestration (`lib/runner.ts`, DOT-224).
 - `v0.1.x` — initial release + Windows stability (`spawn EINVAL`, child `pi` hangs) and `/twins:run` UX fixes.
 
 **Recently completed seeds** (removed from the candidate table):
 
 - **M-2** — `resolvePair` / `ensureConfig` tests (`extensions-helpers.test.mjs`, DOT-1545).
 - **M-3** — `synthesizeResponses` + `formatTwinsMarkdown` tests (`runner.test.mjs`, #45).
-- **M-7** — Type `twins_run` tool return (`lib/twins-run-tool.ts`, DOT-1729).
+- **M-4** — Troubleshooting guide covering config, model, Windows spawn, and dual-failure errors (DOT-1750).
+- **M-5** — Interactive pair picker for `/twins:run` (#56).
+- **M-7** — Typed `twins_run` tool return (DOT-1729).
 
 ### Known housekeeping (low priority)
 
-- No open Dependabot PRs at last check; re-run `gh pr list` before the next seed batch.
+- Registry/release freshness needs an explicit check before selecting a release seed; it is not available from this local checkout alone.
 - `extensions/index.ts` still hardcodes a Japanese completion string (`"完了"`) in `/twins:run` — see M-8.
+- `docs/architecture.md` is still absent; the flow is described below as M-9.
 
 ---
 
@@ -71,21 +72,18 @@ history, or a hosted service.
 
 ## Short-term maintenance goals (next 1–2 releases)
 
-### v0.3.2 — docs & test hygiene (patch)
+### v0.3.8 — documentation and small UX cleanup (patch)
 
-Close the remaining documentation and typing gaps without changing default twin-run
-behavior. Primary targets: user-facing troubleshooting guide (M-4), a short
-architecture note for the run → synthesize flow (M-9). These are low-risk and suitable for a patch
-bump once at least one doc seed lands.
+Land M-8 or M-9 without changing default twin-run behavior. M-8 is the smallest
+user-visible patch; M-9 is the preferred contributor-facing documentation seed.
 
-### v0.4.0 — small UX improvements (minor)
+### v0.4.0 — synthesis UX (minor)
 
-- Interactive pair selection for `/twins:run` when more than one pair is configured
-  and no `default` pair is present (M-5).
-- Configurable synthesis prompt language (English default, Japanese as an option)
-  instead of the current always-Japanese synthesis instruction (M-6).
+- Configurable synthesis prompt language (English default, Japanese as an option) (M-6).
+- Any follow-up pair-selection polish should preserve the current picker, single-pair,
+  and `default` behavior; the interactive picker itself is complete (M-5).
 
-These are additive, opt-in, and behind config or UI — a minor bump.
+These changes should remain additive and opt-in.
 
 ---
 
@@ -97,13 +95,17 @@ Seeds are tagged by area: `docs` · `tests` · `refactor` · `feature` · `chore
 
 | ID | Title | Area | Est. | Target | Why now |
 |---|---|---|---|---|---|
-| M-4 | Add `docs/troubleshooting.md` (common errors → fixes) | docs | ~45–60m | v0.3.2 | Users hit config/model/spawn errors with no mapped fixes; README docs section is thin. |
-| M-5 | Interactive pair picker for `/twins:run` | feature | ~45–75m | v0.4.0 | Multi-pair configs silently use the first pair; explicit selection reduces surprise. |
 | M-6 | Configurable synthesis prompt language (EN default, JA option) | feature | ~60–90m | v0.4.0 | `buildSynthesisPrompt` is always Japanese; English-first configs need an opt-in path. |
-| M-8 | Localize `/twins:run` completion message | chore | ~30m | v0.3.2 | Hardcoded `"完了"` is inconsistent with EN synthesis defaults planned in M-6. |
-| M-9 | Add `docs/architecture.md` (run → synthesize flow) | docs | ~45–60m | v0.3.2 | New contributors lack a one-page map of `extensions/` → `lib/runner.ts` → synthesis. |
+| M-8 | Localize `/twins:run` completion message | chore | ~30m | v0.3.8 | Hardcoded `"完了"` is inconsistent with the package's English-facing documentation. |
+| M-9 | Add `docs/architecture.md` (run → synthesize flow) | docs | ~45–60m | v0.3.8 | New contributors lack a one-page map of `extensions/` → `lib/runner.ts` → synthesis. |
+| M-10 | Verify registry/package release freshness before a version bump | chore | ~30m | next seed | Repository metadata and registry state can drift; record the check before planning release work. |
 
-### M-4 — Add `docs/troubleshooting.md`
+### Completed: M-4 — Add `docs/troubleshooting.md`
+
+This seed is complete; see [`docs/troubleshooting.md`](docs/troubleshooting.md).
+
+> Historical acceptance criteria (completed; retained for traceability):
+>
 
 Document the errors users actually hit, mapped to fixes: config not found
 (`ConfigNotFoundError`), model not found (`Model not found: …`), Windows spawn
@@ -125,6 +127,7 @@ the Pi UI instead of silently using `names[0]`.
 - **Acceptance**: with ≥2 pairs and no `default`, the user can choose; a single
   pair or a present `default` keeps current behavior; new test for the selection
   branch; manual `pi -e .` smoke passes; `npm run ci` green.
+
 
 ### M-6 — Configurable synthesis prompt language
 
@@ -169,7 +172,7 @@ README Docs and optionally from CONTRIBUTING.
   the list honest in the short term; a future minor could read models live.
 - **No per-model timeout / retry.** The runner relies entirely on a passed
   `AbortSignal`; there is no per-model timeout or single-retry on transient
-  provider errors. Worth a design pass once doc/typing seeds (M-4/M-7) land.
+  provider errors. Worth a design pass once the current documentation seeds (M-8/M-9) land.
 - **CONTRIBUTING.md is minimal.** No pointer to this roadmap or to test-contribution
   expectations — fold a short "maintenance seeds" pointer in on the next docs pass
   (can piggyback on M-9).
@@ -178,12 +181,12 @@ README Docs and optionally from CONTRIBUTING.
 
 ## Areas needing improvement
 
-- **Docs**: README is solid; `docs/` only has `examples.md` + `release.md`. Needs
-  `troubleshooting.md` (M-4) and an architecture note (M-9).
+- **Docs**: README and `docs/troubleshooting.md` are current; `docs/architecture.md`
+  remains the main documentation gap (M-9).
 - **Tests**: `lib/` and extension helpers are reasonably covered after M-2/M-3;
-  interactive pair selection (M-5) still lacks tests.
-- **Examples**: `docs/examples.md` shows happy-path commands only; no error/config
-  examples. Improve alongside M-4.
+  preserve picker coverage when changing pair selection.
+- **Examples**: `docs/examples.md` shows happy-path commands; add architecture links
+  or focused error/config examples only when a seed requires them.
 
 ---
 
