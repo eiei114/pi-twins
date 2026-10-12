@@ -32,3 +32,5 @@ Releases use npm Trusted Publishing. Do not add `NPM_TOKEN` to GitHub Secrets.
 npm version patch
 git push
 ```
+
+Creating a version bump does not release or publish the package. After the change reaches `main`, an authorized release owner must manually run the **Release (manual)** workflow in GitHub Actions.

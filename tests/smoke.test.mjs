@@ -22,7 +22,7 @@ test("README install pin matches package version", () => {
   assert.equal(pinMatch[1], packageJson.version);
 });
 
-test("README release flow matches auto-release handoff", () => {
+test("README release flow requires a manual release after merging", () => {
   const releaseSection = readme.match(/^## Release[\s\S]*?(?=^## |\Z)/m);
   assert.ok(releaseSection, "README should have a Release section");
   const releaseBlock = releaseSection[0].match(/```bash\n([\s\S]*?)```/);
@@ -31,9 +31,11 @@ test("README release flow matches auto-release handoff", () => {
   assert.match(commands, /^npm version (patch|minor|major)/m);
   assert.match(commands, /^git push$/m);
   assert.doesNotMatch(commands, /push --tags/);
+  assert.match(releaseSection[0], /manually run the \*\*Release \(manual\)\*\* workflow/i);
+  assert.match(releaseSection[0], /Merging a PR does not create a tag or release/);
 });
 
-test("CONTRIBUTING release flow matches auto-release handoff", () => {
+test("CONTRIBUTING release flow requires a manual release after merging", () => {
   const releaseSection = contributing.match(/^## Release[\s\S]*$/m);
   assert.ok(releaseSection, "CONTRIBUTING should have a Release section");
   const releaseBlock = releaseSection[0].match(/```bash\n([\s\S]*?)```/);
@@ -42,6 +44,7 @@ test("CONTRIBUTING release flow matches auto-release handoff", () => {
   assert.match(commands, /^npm version patch$/m);
   assert.match(commands, /^git push$/m);
   assert.doesNotMatch(commands, /push --tags/);
+  assert.match(releaseSection[0], /manually run the \*\*Release \(manual\)\*\* workflow/i);
 });
 
 test("README development section does not duplicate pack:check", () => {
@@ -69,12 +72,17 @@ test("package uses public publish config", () => {
   assert.equal(packageJson.publishConfig.access, "public");
 });
 
-test("release workflow includes npm publish handoff", () => {
+test("release and publish workflows keep publication out of the merge path", () => {
   assert.match(autoReleaseWorkflow, /actions:\s*write/);
   assert.match(autoReleaseWorkflow, /contents:\s*write/);
+  assert.match(autoReleaseWorkflow, /workflow_dispatch:/);
+  assert.doesNotMatch(autoReleaseWorkflow, /\n  push:/);
+  assert.match(autoReleaseWorkflow, /if: github\.event_name == 'workflow_dispatch' && github\.ref == 'refs\/heads\/main'/);
   assert.match(autoReleaseWorkflow, /gh workflow run publish\.yml/);
   assert.match(publishWorkflow, /id-token:\s*write/);
   assert.match(publishWorkflow, /workflow_dispatch:/);
+  assert.match(publishWorkflow, /tags:/);
+  assert.doesNotMatch(publishWorkflow, /branches:\s*\n\s+- main/);
   assert.match(publishWorkflow, /npm publish --access public/);
 });
 

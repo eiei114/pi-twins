@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 
 This project follows semantic versioning.
 
+## [0.3.8] - 2026-10-12
+
+### Changed
+
+- Pin the Pi SDK development dependencies to 1.1.0 and verify extension behavior against the real Pi host.
+- Keep release and npm publish workflows manual so a version-bump merge cannot publish automatically.
+
 ## [0.3.7] - 2026-09-30
 
 ### Changed
