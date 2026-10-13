@@ -20,6 +20,24 @@ const errorTool = {
   isError: true,
   result: { content: [{ type: "text", text: "pi-twins error: openai/missing-a: Model not found: openai/missing-a" }] },
 };
+const cleanHost = {
+  exit_code: 0,
+  exitObserved: true,
+  closeObserved: true,
+  signal: null,
+  timedOut: false,
+  processError: null,
+  stdout: "",
+  stderr: "",
+};
+
+function reloadAssertions(firstHost = {}, secondHost = {}) {
+  const first = { ...cleanHost, ...firstHost, type: "first_host_exit" };
+  const second = { ...cleanHost, ...secondHost, type: "second_host_exit" };
+  const fullOutput = [first.stdout, first.stderr, second.stdout, second.stderr].join("\n");
+  return behaviorAssertions("reload_cleanup", { records: [commands, successTool, first, second],
+    exit_code: second.exit_code, exitObserved: second.exitObserved, fullOutput });
+}
 
 test("smoke contract accepts actual feature output and fails closed when it is absent", () => {
   const input = { records: [commands, successTool], exit_code: 0, exitObserved: true };
@@ -33,16 +51,27 @@ test("smoke contract accepts the handled error and fails closed when it is absen
   assert.equal(behaviorAssertions("error_path", { ...input, records: [commands] })[0].passed, false);
 });
 
-test("reload contract requires real second-host registration, feature output, and clean shutdown", () => {
-  const input = { records: [commands, successTool, { type: "first_host_exit", exit_code: 0, exitObserved: true }],
-    exit_code: 0, exitObserved: true };
-  assert.deepEqual(behaviorAssertions("reload_cleanup", input).map((item) => item.passed), [true, true, true]);
-  assert.deepEqual(behaviorAssertions("reload_cleanup", { ...input, records: [successTool,
-    { type: "first_host_exit", exit_code: 0, exitObserved: true }] })
-    .map((item) => item.passed), [false, true, true]);
-  assert.equal(behaviorAssertions("reload_cleanup", { ...input, records: [commands, successTool,
-    { type: "first_host_exit", exit_code: 1, exitObserved: true }] })[2].passed, false);
-  assert.equal(behaviorAssertions("reload_cleanup", { ...input, exitObserved: false })[2].passed, false);
+test("reload contract requires second-host behavior and clean shutdown from both hosts", () => {
+  assert.deepEqual(reloadAssertions().map((item) => item.passed), [true, true, true]);
+  assert.deepEqual(reloadAssertions({ exit_code: 1 }).map((item) => item.passed), [true, true, false]);
+  assert.deepEqual(reloadAssertions({ exitObserved: false }).map((item) => item.passed), [true, true, false]);
+  assert.deepEqual(reloadAssertions({ closeObserved: false }).map((item) => item.passed), [true, true, false]);
+  assert.deepEqual(reloadAssertions({ timedOut: true }).map((item) => item.passed), [true, true, false]);
+  assert.deepEqual(reloadAssertions({ processError: "spawn failed" }).map((item) => item.passed), [true, true, false]);
+  assert.deepEqual(reloadAssertions({ signal: "SIGTERM" }).map((item) => item.passed), [true, true, false]);
+  assert.deepEqual(reloadAssertions({ stderr: "shutdown error: first host failed" })
+    .map((item) => item.passed), [true, true, false]);
+  assert.deepEqual(reloadAssertions({}, { exit_code: 1 }).map((item) => item.passed), [false, true, false]);
+  assert.deepEqual(reloadAssertions({}, { closeObserved: false }).map((item) => item.passed), [true, true, false]);
+  assert.deepEqual(reloadAssertions({}, { timedOut: true }).map((item) => item.passed), [true, true, false]);
+  assert.deepEqual(reloadAssertions({}, { processError: "spawn failed" }).map((item) => item.passed), [true, true, false]);
+  assert.deepEqual(reloadAssertions({}, { stderr: "shutdown error: second host failed" })
+    .map((item) => item.passed), [true, true, false]);
+  assert.deepEqual(reloadAssertions({ stderr: "shutdown error: first host failed" },
+    { stderr: "shutdown error: second host failed" }).map((item) => item.passed), [true, true, false]);
+  assert.deepEqual(behaviorAssertions("reload_cleanup", { records: [successTool,
+    { type: "first_host_exit", ...cleanHost }, { type: "second_host_exit", ...cleanHost }],
+    exit_code: 0, exitObserved: true }).map((item) => item.passed), [false, true, true]);
 });
 
 test("host-shell contract requires exact pinned CLI version and observed process exit", () => {

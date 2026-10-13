@@ -131,19 +131,27 @@ function runChild(executable, args, { onRecord, onStart } = {}) {
     let pending = "";
     let timedOut = false;
     let exitObserved = false;
+    let closeObserved = false;
+    let exitCode = null;
+    let exitSignal = null;
+    let processError = null;
     let finished = false;
     let cleanupTimer;
     const deadline = setTimeout(() => {
       timedOut = true;
       child.kill();
-      cleanupTimer = setTimeout(() => child.kill("SIGKILL"), cleanupGraceMs);
+      cleanupTimer = setTimeout(() => {
+        child.kill("SIGKILL");
+        finish();
+      }, cleanupGraceMs);
     }, deadlineMs);
-    const finish = (code, signal) => {
+    const finish = () => {
       if (finished) return;
       finished = true;
       clearTimeout(deadline);
       clearTimeout(cleanupTimer);
-      resolveRun({ stdout, stderr, exit_code: exitObserved ? code : null, exitObserved, signal, timedOut, records: parseJsonLines(stdout) });
+      resolveRun({ stdout, stderr, exit_code: exitObserved ? exitCode : null, exitObserved, closeObserved,
+        signal: exitSignal, timedOut, processError, records: parseJsonLines(stdout) });
     };
     child.stdout.setEncoding("utf8");
     child.stdout.on("data", (chunk) => {
@@ -158,10 +166,18 @@ function runChild(executable, args, { onRecord, onStart } = {}) {
     });
     child.stderr.setEncoding("utf8");
     child.stderr.on("data", (chunk) => { stderr += chunk; });
-    child.once("error", (error) => { stderr += `\nspawn error: ${error.message}`; });
-    child.once("close", (code, signal) => {
+    child.once("error", (error) => {
+      processError = error.message;
+      stderr += `\nspawn error: ${error.message}`;
+    });
+    child.once("exit", (code, signal) => {
       exitObserved = true;
-      finish(code, signal);
+      exitCode = code;
+      exitSignal = signal;
+    });
+    child.once("close", () => {
+      closeObserved = true;
+      finish();
     });
     onStart?.(child);
   });
@@ -197,13 +213,14 @@ function runRpc({ feature = false, pair = ["openai/smoke-a", "openai/smoke-b"] }
 function summarize(name, result, expectedVersion) {
   const fullOutput = `${result.stdout}\n--- stderr ---\n${result.stderr}`;
   const evidenceRecords = result.records
-    .filter((record) => ["response", "tool_execution_start", "tool_execution_end", "agent_settled", "first_host_exit"].includes(record.type))
+    .filter((record) => ["response", "tool_execution_start", "tool_execution_end", "agent_settled", "first_host_exit", "second_host_exit"].includes(record.type))
     .map((record) => JSON.parse(JSON.stringify(record, (key, value) => {
       if (typeof value !== "string") return value;
       return value.replaceAll(root, "<checkout>").replaceAll(tempRoot, "<isolated-temp>");
     })));
   const assertions = behaviorAssertions(name, { records: evidenceRecords, exit_code: result.exit_code,
-    exitObserved: result.exitObserved, stdout: result.stdout, fullOutput, expectedVersion });
+    exitObserved: result.exitObserved, closeObserved: result.closeObserved, timedOut: result.timedOut,
+    processError: result.processError, stdout: result.stdout, fullOutput, expectedVersion });
   const safeStderr = result.stderr.replaceAll(root, "<checkout>").replaceAll(tempRoot, "<isolated-temp>");
   const hasUnhandledError = UNHANDLED_ERROR_PATTERN.test(fullOutput);
   const hasLoadError = EXTENSION_LOAD_ERROR_PATTERN.test(fullOutput);
@@ -211,9 +228,10 @@ function summarize(name, result, expectedVersion) {
     name,
     command: "node scripts/pi-sdk-smoke.mjs",
     exit_code: result.exit_code,
-    passed: result.exit_code === 0 && result.exitObserved && !result.timedOut && !hasUnhandledError && !hasLoadError
+    passed: result.exit_code === 0 && result.exitObserved && result.closeObserved && !result.timedOut
+      && !result.processError && !hasUnhandledError && !hasLoadError
       && assertions.every((item) => item.passed),
-    evidence: `${evidenceRecords.map((record) => JSON.stringify(record)).join("\n")}\n${safeStderr.trim()}\nprocess_exit_observed=${result.exitObserved}; timed_out=${result.timedOut}; signal=${result.signal ?? "none"}`,
+    evidence: `${evidenceRecords.map((record) => JSON.stringify(record)).join("\n")}\n${safeStderr.trim()}\nprocess_exit_observed=${result.exitObserved}; close_observed=${result.closeObserved}; timed_out=${result.timedOut}; process_error=${result.processError ?? "none"}; signal=${result.signal ?? "none"}`,
     assertions,
     hasUnhandledError,
     hasLoadError,
@@ -245,8 +263,23 @@ try {
 
   const firstHost = await runRpc();
   const secondHost = await runRpc({ feature: true });
+  const hostExitRecord = (type, host) => ({ type,
+    exit_code: host.exit_code,
+    exitObserved: host.exitObserved,
+    closeObserved: host.closeObserved,
+    signal: host.signal,
+    timedOut: host.timedOut,
+    processError: host.processError,
+    stderr: host.stderr,
+  });
   const reloadResult = { ...secondHost,
-    records: [...secondHost.records, { type: "first_host_exit", exit_code: firstHost.exit_code, exitObserved: firstHost.exitObserved }] };
+    stdout: `${firstHost.stdout}\n--- second host stdout ---\n${secondHost.stdout}`,
+    stderr: `${firstHost.stderr}\n--- second host stderr ---\n${secondHost.stderr}`,
+    timedOut: firstHost.timedOut || secondHost.timedOut,
+    processError: [firstHost.processError, secondHost.processError].filter(Boolean).join("; ") || null,
+    records: [...secondHost.records, hostExitRecord("first_host_exit", firstHost),
+      hostExitRecord("second_host_exit", secondHost)],
+  };
   cases.push(summarize("reload_cleanup", reloadResult, cliManifest.version));
   cases.push(summarize("host_shell", await runHostShell(cliManifest.version), cliManifest.version));
 

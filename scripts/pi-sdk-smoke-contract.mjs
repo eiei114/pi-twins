@@ -47,6 +47,15 @@ function handledFeatureError(records) {
   return tool?.isError === true && text.includes("pi-twins error:") && text.includes("Model not found: openai/missing-a");
 }
 
+function exitedCleanly(host) {
+  return host?.exit_code === 0
+    && host.exitObserved === true
+    && host.closeObserved === true
+    && host.timedOut !== true
+    && host.signal == null
+    && !host.processError;
+}
+
 export function behaviorAssertions(name, { records = [], exit_code, exitObserved, stdout = "", fullOutput = "", expectedVersion }) {
   const commands = commandsResponse(records);
   const registered = commands?.success === true && isRegistered(commands);
@@ -68,15 +77,16 @@ export function behaviorAssertions(name, { records = [], exit_code, exitObserved
   if (name === "reload_cleanup") {
     const tool = twinsToolResult(records);
     const firstHost = records.find((record) => record?.type === "first_host_exit");
+    const secondHost = records.find((record) => record?.type === "second_host_exit");
+    const shutdownErrors = UNHANDLED_ERROR_PATTERN.test(fullOutput);
     return [
       assertion("reloaded_extension_registered", "A second actual Pi host discovers all pi-twins commands",
         commands ?? null, registered && exit_code === 0 && exitObserved),
       assertion("reloaded_feature_response", "The second host executes twins_run and returns both responses plus synthesis",
         tool ?? null, feature),
-      assertion("clean_shutdown", "The second actual Pi process exits cleanly after stdin closes",
-        { firstHost: firstHost ?? null, secondHost: { exit_code, exitObserved }, shutdownErrors: UNHANDLED_ERROR_PATTERN.test(fullOutput) },
-        firstHost?.exit_code === 0 && firstHost.exitObserved === true
-          && exit_code === 0 && exitObserved && !UNHANDLED_ERROR_PATTERN.test(fullOutput)),
+      assertion("clean_shutdown", "Both actual Pi processes exit cleanly after stdin closes",
+        { firstHost: firstHost ?? null, secondHost: secondHost ?? { exit_code, exitObserved }, shutdownErrors },
+        exitedCleanly(firstHost) && exitedCleanly(secondHost) && !shutdownErrors),
     ];
   }
   if (name === "host_shell") {
