@@ -37,7 +37,7 @@ pi install npm:pi-twins
 Pin a specific version:
 
 ```bash
-pi install npm:pi-twins@0.3.7
+pi install npm:pi-twins@0.3.8
 ```
 
 Install into the current project instead of your user Pi settings:
@@ -148,7 +148,7 @@ npm version patch   # or minor / major
 git push
 ```
 
-Pushing a `package.json` version bump to `main` triggers `auto-release.yml`, which tags the release and dispatches `publish.yml`.
+After a version bump reaches `main`, an authorized release owner must manually run the **Release (manual)** workflow. Merging a PR does not create a tag or release and does not publish to npm.
 
 See [`docs/release.md`](docs/release.md) for setup details.
 

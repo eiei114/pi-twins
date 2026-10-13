@@ -1,6 +1,6 @@
 {
   "name": "pi-twins",
-  "version": "0.3.7",
+  "version": "0.3.8",
   "description": "Dual-model synthesis for Pi — run the same prompt on two models, get one synthesized answer",
   "type": "module",
   "license": "MIT",
@@ -33,7 +33,7 @@
   "scripts": {
     "typecheck": "tsc --noEmit",
     "test": "node --experimental-test-module-mocks --test tests/*.test.mjs",
-    "ci": "npm run typecheck && npm test && npm run pack:check",
+    "ci": "npm run typecheck && npm test && node scripts/pi-sdk-smoke.mjs && npm run pack:check",
     "pack:check": "npm pack --dry-run"
   },
   "pi": {
@@ -51,9 +51,10 @@
     "typebox": "*"
   },
   "devDependencies": {
-    "@earendil-works/pi-ai": "^0.99.1",
-    "@earendil-works/pi-coding-agent": "^0.99.1",
-    "@earendil-works/pi-tui": "^0.99.1",
+    "@earendil-works/pi-agent-core": "1.1.0",
+    "@earendil-works/pi-ai": "1.1.0",
+    "@earendil-works/pi-coding-agent": "1.1.0",
+    "@earendil-works/pi-tui": "1.1.0",
     "@types/node": "^26.1.0",
     "typebox": "latest",
     "typescript": "^7.0.2"
