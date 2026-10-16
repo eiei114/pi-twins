@@ -3,6 +3,7 @@ import { configExists, getConfigPath, loadConfig, writeDefaultConfig } from "../
 import { ensureConfig, selectPair } from "../lib/extension-helpers.ts";
 import {
   buildSynthesisPrompt,
+  formatBothModelsFailedMessage,
   formatResponsesMarkdown,
   runTwins,
 } from "../lib/runner.ts";
@@ -72,14 +73,7 @@ export default function (pi: ExtensionAPI) {
         const result = await runTwins(prompt.trim(), pair, ctx.modelRegistry, { signal: ctx.signal });
 
         if (!result.responseA && !result.responseB) {
-          throw new Error(
-            [
-              result.errorA ? `${result.modelA}: ${result.errorA}` : undefined,
-              result.errorB ? `${result.modelB}: ${result.errorB}` : undefined,
-            ]
-              .filter(Boolean)
-              .join("; ") || "Both models failed",
-          );
+          throw new Error(formatBothModelsFailedMessage(result));
         }
 
         pi.sendMessage({

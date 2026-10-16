@@ -225,6 +225,17 @@ export function formatResponsesMarkdown(result: TwinsRunResult): string {
   return lines.join("\n");
 }
 
+export function formatBothModelsFailedMessage(result: TwinsRunResult): string {
+  return (
+    [
+      result.errorA ? `${result.modelA}: ${result.errorA}` : undefined,
+      result.errorB ? `${result.modelB}: ${result.errorB}` : undefined,
+    ]
+      .filter(Boolean)
+      .join("; ") || "Both models failed"
+  );
+}
+
 /** Build the synthesis instruction prompt (command handler injects this into Pi). */
 export function buildSynthesisPrompt(
   result: TwinsRunResult,
