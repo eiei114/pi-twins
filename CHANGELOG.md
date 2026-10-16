@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 This project follows semantic versioning.
 
+## [0.3.9] - 2026-10-16
+
+### Changed
+
+- Pin the Pi SDK development dependencies to 1.2.0 and verify pi-twins against the actual Pi host.
+
 ## [0.3.8] - 2026-10-12
 
 ### Changed
