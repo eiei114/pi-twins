@@ -14,6 +14,7 @@ mock.module("@earendil-works/pi-ai/compat", {
 
 const {
   buildSynthesisPrompt,
+  formatBothModelsFailedMessage,
   formatResponsesMarkdown,
   formatTwinsMarkdown,
   runTwins,
@@ -112,6 +113,28 @@ test("formatResponsesMarkdown includes successful and failed sides", () => {
   assert.match(markdown, /a\/model/);
   assert.match(markdown, /first/);
   assert.match(markdown, /boom/);
+});
+
+test("formatBothModelsFailedMessage preserves both model errors and generic fallback", () => {
+  assert.equal(
+    formatBothModelsFailedMessage({
+      modelA: "anthropic/claude-sonnet-4",
+      modelB: "google/gemini-2.5-pro",
+      prompt: "hello",
+      errorA: "rate limit",
+      errorB: "provider timeout",
+    }),
+    "anthropic/claude-sonnet-4: rate limit; google/gemini-2.5-pro: provider timeout",
+  );
+
+  assert.equal(
+    formatBothModelsFailedMessage({
+      modelA: "anthropic/claude-sonnet-4",
+      modelB: "google/gemini-2.5-pro",
+      prompt: "hello",
+    }),
+    "Both models failed",
+  );
 });
 
 test("buildSynthesisPrompt uses the issue template with model names", () => {

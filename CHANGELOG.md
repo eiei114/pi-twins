@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 This project follows semantic versioning.
 
+## [0.3.10] - 2026-10-17
+
+### Changed
+
+- Consolidate shared both-models-failed diagnostics in the runner module (DOT-2523).
+
 ## [0.3.9] - 2026-10-16
 
 ### Changed
