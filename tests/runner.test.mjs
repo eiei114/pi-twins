@@ -153,6 +153,7 @@ test("buildSynthesisPrompt uses the issue template with model names", () => {
   assert.match(prompt, /情報を統合し、矛盾を解消してください/);
   assert.match(prompt, /冗長な部分は削除してください/);
   assert.match(prompt, /1つの自然な回答として書いてください/);
+  assert.match(prompt, /最終回答は日本語で書いてください/);
 });
 
 const synthesisResult = {
@@ -162,6 +163,60 @@ const synthesisResult = {
   responseA: "alpha",
   responseB: "beta",
 };
+
+test("buildSynthesisPrompt defaults to the same Japanese prompt as an explicit ja setting", () => {
+  assert.equal(
+    buildSynthesisPrompt(synthesisResult),
+    buildSynthesisPrompt(synthesisResult, { language: "ja" }),
+  );
+});
+
+test("buildSynthesisPrompt localizes all mode requirements and prompt labels", () => {
+  const requirements = {
+    ja: {
+      balanced: ["情報を統合し、矛盾を解消してください"],
+      decision: ["最終的な推奨判断を明確に示してください", "主要なトレードオフ", "具体的なアクション"],
+      critique: ["強みと弱みを批判的に評価してください", "検証が必要な前提", "不足を補ってください"],
+      concise: ["要点だけを簡潔にまとめてください", "余分な前置きや繰り返しを避けてください", "必要な場合のみ箇条書き"],
+    },
+    en: {
+      balanced: ["Integrate the information and resolve contradictions.", "Remove redundant content.", "Write one natural, cohesive answer."],
+      decision: ["Clearly state the final recommendation.", "Briefly explain the rationale and key trade-offs.", "Include concrete next steps."],
+      critique: ["Critically assess the strengths and weaknesses of both responses.", "Identify uncertainties and assumptions that need verification.", "Fill in the gaps with an improved answer."],
+      concise: ["Summarize only the key points.", "Keep it as short as possible, avoiding unnecessary preamble and repetition.", "Use bullet points only when useful."],
+    },
+  };
+
+  for (const [language, modes] of Object.entries(requirements)) {
+    for (const [mode, expected] of Object.entries(modes)) {
+      const prompt = buildSynthesisPrompt(synthesisResult, { language, mode });
+      for (const requirement of expected) assert.ok(prompt.includes(requirement), `${language}/${mode}: ${requirement}`);
+      assert.ok(prompt.includes(language === "en" ? "Write the final answer in English." : "最終回答は日本語で書いてください"));
+    }
+  }
+
+  const englishPrompt = buildSynthesisPrompt({
+    ...synthesisResult,
+    responseA: undefined,
+    responseB: undefined,
+    errorA: "provider unavailable",
+  }, { language: "en", instructions: "  日本語のカスタム指示はそのまま保持する。  " });
+  assert.match(englishPrompt, /Read the following two responses/);
+  assert.match(englishPrompt, /--- Response 1 \(a\/model\) ---/);
+  assert.match(englishPrompt, /Requirements:/);
+  assert.match(englishPrompt, /\[Error: provider unavailable\]/);
+  assert.match(englishPrompt, /\[Error: no response\]/);
+  assert.match(englishPrompt, /Additional instructions \(up to 2000 characters\):/);
+  assert.match(englishPrompt, /Additional instructions \(up to 2000 characters\):\n日本語のカスタム指示はそのまま保持する。\n- Write the final answer in English\./);
+  assert.doesNotMatch(englishPrompt, /追加指示|回答1|要件:/);
+});
+
+test("buildSynthesisPrompt rejects unsupported synthesis languages clearly", () => {
+  assert.throws(
+    () => buildSynthesisPrompt(synthesisResult, { language: "fr" }),
+    /Unknown synthesis language: fr\. Expected one of: ja, en/,
+  );
+});
 
 test("buildSynthesisPrompt adds decision mode requirements", () => {
   const prompt = buildSynthesisPrompt(synthesisResult, { mode: "decision" });

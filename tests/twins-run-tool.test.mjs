@@ -59,24 +59,34 @@ test("resolveSynthesisOptions merges config defaults with per-call overrides", (
       default: ["anthropic/claude-sonnet-4", "google/gemini-2.5-pro"],
     },
     synthesis: {
+      language: "en",
       mode: "decision",
       instructions: "Prefer concrete next steps.",
     },
   };
 
   assert.deepEqual(resolveSynthesisOptions(config), {
+    language: "en",
     mode: "decision",
     instructions: "Prefer concrete next steps.",
   });
 
   assert.deepEqual(
     resolveSynthesisOptions(config, {
+      synthesisLanguage: "ja",
       synthesisMode: "critique",
       synthesisInstructions: "Call out weak evidence.",
     }),
     {
+      language: "ja",
       mode: "critique",
       instructions: "Call out weak evidence.",
     },
+  );
+
+  assert.equal(resolveSynthesisOptions({ ...config, synthesis: { mode: "decision" } }).language, "ja");
+  assert.equal(
+    resolveSynthesisOptions(config, { synthesisLanguage: "en" }).language,
+    "en",
   );
 });

@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 This project follows semantic versioning.
 
+## [0.4.0] - 2026-10-19
+
+### Added
+
+- Add optional Japanese/English synthesis language configuration and `twins_run` call overrides, defaulting to Japanese (DOT-2605).
+
 ## [0.3.10] - 2026-10-17
 
 ### Changed

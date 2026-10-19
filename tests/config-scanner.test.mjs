@@ -40,6 +40,13 @@ test("TwinsConfigSchema accepts valid pairs", () => {
     },
   };
   assert.equal(Check(TwinsConfigSchema, valid), true);
+  assert.equal(
+    Check(TwinsConfigSchema, {
+      pairs: valid.pairs,
+      synthesis: { language: "ja" },
+    }),
+    true,
+  );
 });
 
 test("TwinsConfigSchema accepts optional synthesis defaults", () => {
@@ -48,6 +55,7 @@ test("TwinsConfigSchema accepts optional synthesis defaults", () => {
       default: ["anthropic/claude-sonnet-4", "google/gemini-2.5-pro"],
     },
     synthesis: {
+      language: "en",
       mode: "decision",
       instructions: "Prefer an actionable recommendation.",
     },
@@ -63,6 +71,7 @@ test("TwinsConfigSchema rejects unknown synthesis modes and overlong instruction
   };
 
   assert.equal(Check(TwinsConfigSchema, { ...base, synthesis: { mode: "verbose" } }), false);
+  assert.equal(Check(TwinsConfigSchema, { ...base, synthesis: { language: "fr" } }), false);
   assert.equal(
     Check(TwinsConfigSchema, {
       ...base,
@@ -80,16 +89,19 @@ test("TwinsConfigSchema rejects invalid pairs", () => {
 test("TwinsRunToolParametersSchema accepts prompt and optional synthesis controls", () => {
   assert.equal(Check(TwinsRunToolParametersSchema, { prompt: "hello" }), true);
   assert.equal(Check(TwinsRunToolParametersSchema, { prompt: "hello", pair: "default" }), true);
+  assert.equal(Check(TwinsRunToolParametersSchema, { prompt: "hello", synthesisLanguage: "ja" }), true);
   assert.equal(
     Check(TwinsRunToolParametersSchema, {
       prompt: "hello",
       synthesisMode: "critique",
+      synthesisLanguage: "en",
       synthesisInstructions: "Call out weak evidence.",
     }),
     true,
   );
   assert.equal(Check(TwinsRunToolParametersSchema, {}), false);
   assert.equal(Check(TwinsRunToolParametersSchema, { prompt: "hello", synthesisMode: "verbose" }), false);
+  assert.equal(Check(TwinsRunToolParametersSchema, { prompt: "hello", synthesisLanguage: "fr" }), false);
   assert.equal(
     Check(TwinsRunToolParametersSchema, {
       prompt: "hello",
@@ -158,6 +170,17 @@ synthesis:
 `;
   await withTempConfig(invalidMode, async (configPath) => {
     assert.throws(() => loadConfig(configPath), /synthesis\.mode/);
+  });
+
+  const invalidLanguage = `pairs:
+  default:
+    - anthropic/claude-sonnet-4
+    - google/gemini-2.5-pro
+synthesis:
+  language: fr
+`;
+  await withTempConfig(invalidLanguage, async (configPath) => {
+    assert.throws(() => loadConfig(configPath), /synthesis\.language.*ja, en/);
   });
 
   const overlongInstructions = `pairs:
