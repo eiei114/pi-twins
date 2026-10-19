@@ -16,6 +16,7 @@ export const ModelPairSchema = Type.Tuple([
 export const SYNTHESIS_INSTRUCTIONS_MAX_LENGTH = 2000;
 
 export const SYNTHESIS_MODES = ["balanced", "decision", "critique", "concise"] as const;
+export const SYNTHESIS_LANGUAGES = ["ja", "en"] as const;
 
 export const SynthesisModeSchema = StringEnum(SYNTHESIS_MODES, {
   description: "How pi-twins should shape the final synthesized answer",
@@ -23,7 +24,14 @@ export const SynthesisModeSchema = StringEnum(SYNTHESIS_MODES, {
 
 export type SynthesisMode = Static<typeof SynthesisModeSchema>;
 
+export const SynthesisLanguageSchema = StringEnum(SYNTHESIS_LANGUAGES, {
+  description: "Language for the final synthesized answer (ja or en; Japanese by default)",
+});
+
+export type SynthesisLanguage = Static<typeof SynthesisLanguageSchema>;
+
 export const SynthesisConfigSchema = Type.Object({
+  language: Type.Optional(SynthesisLanguageSchema),
   mode: Type.Optional(SynthesisModeSchema),
   instructions: Type.Optional(Type.String({
     maxLength: SYNTHESIS_INSTRUCTIONS_MAX_LENGTH,
@@ -52,6 +60,7 @@ export const TwinsRunToolParametersSchema = Type.Object({
     description: "Pair name from ~/.pi/twins.yaml (defaults to the default pair when present, otherwise the first configured pair)",
   })),
   synthesisMode: Type.Optional(SynthesisModeSchema),
+  synthesisLanguage: Type.Optional(SynthesisLanguageSchema),
   synthesisInstructions: Type.Optional(Type.String({
     maxLength: SYNTHESIS_INSTRUCTIONS_MAX_LENGTH,
     description: `Per-call synthesis instructions (${SYNTHESIS_INSTRUCTIONS_MAX_LENGTH} characters max)`,

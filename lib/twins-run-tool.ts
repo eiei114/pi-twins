@@ -13,7 +13,11 @@ import {
   type SynthesisPromptOptions,
   type TwinsRunResult,
 } from "./runner.ts";
-import { TwinsRunToolParametersSchema, type TwinsConfig } from "./schema.ts";
+import {
+  TwinsRunToolParametersSchema,
+  type SynthesisLanguage,
+  type TwinsConfig,
+} from "./schema.ts";
 
 export type TwinsRunToolSuccessDetails = {
   pair: [string, string];
@@ -35,11 +39,13 @@ export type TwinsRunToolResult = AgentToolResult<TwinsRunToolDetails> & {
 export function resolveSynthesisOptions(
   config: TwinsConfig,
   overrides: {
+    synthesisLanguage?: SynthesisLanguage;
     synthesisMode?: SynthesisPromptOptions["mode"];
     synthesisInstructions?: string;
   } = {},
 ): SynthesisPromptOptions {
   return {
+    language: overrides.synthesisLanguage ?? config.synthesis?.language ?? "ja",
     mode: overrides.synthesisMode ?? config.synthesis?.mode,
     instructions: overrides.synthesisInstructions ?? config.synthesis?.instructions,
   };

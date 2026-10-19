@@ -5,6 +5,7 @@ import { parse } from "yaml";
 import { Check } from "typebox/schema";
 import {
   SYNTHESIS_INSTRUCTIONS_MAX_LENGTH,
+  SYNTHESIS_LANGUAGES,
   SYNTHESIS_MODES,
   TwinsConfigSchema,
   type TwinsConfig,
@@ -54,7 +55,19 @@ function isObject(value: unknown): value is Record<string, unknown> {
 function validateSynthesisConfigDetails(configPath: string, parsed: unknown): void {
   if (!isObject(parsed) || !isObject(parsed.synthesis)) return;
 
-  const { mode, instructions } = parsed.synthesis;
+  const { language, mode, instructions } = parsed.synthesis;
+  if (
+    language !== undefined
+    && (typeof language !== "string" || !(SYNTHESIS_LANGUAGES as readonly string[]).includes(language))
+  ) {
+    throw new Error(
+      formatValidationError(
+        configPath,
+        `expected "synthesis.language" to be one of: ${SYNTHESIS_LANGUAGES.join(", ")}`,
+      ),
+    );
+  }
+
   if (typeof mode === "string" && !(SYNTHESIS_MODES as readonly string[]).includes(mode)) {
     throw new Error(
       formatValidationError(
@@ -148,6 +161,7 @@ pairs:
 
 # Optional synthesis defaults. Omit this block to keep balanced synthesis.
 # synthesis:
+#   language: ja # ja | en (default: ja)
 #   mode: balanced # balanced | decision | critique | concise
 #   instructions: "Prefer concrete next steps when useful."
 `;

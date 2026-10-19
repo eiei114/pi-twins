@@ -21,6 +21,7 @@ pi-twins sends your prompt to two AI models in parallel, then Pi itself reads bo
 
 - **Dual-model execution** — run the same prompt on two models simultaneously
 - **Automatic synthesis** — Pi reads both responses and produces one unified answer
+- **Synthesis language** — choose Japanese or English for the final answer (Japanese by default)
 - **Synthesis controls** — choose balanced, decision, critique, or concise final-answer modes with optional instructions
 - **YAML configuration** — define model pairs (e.g. Claude + Gemini) in `~/.pi/twins.yaml`
 - **Model discovery** — `/twins:scan` to see which models are available
@@ -37,7 +38,7 @@ pi install npm:pi-twins
 Pin a specific version:
 
 ```bash
-pi install npm:pi-twins@0.3.10
+pi install npm:pi-twins@0.4.0
 ```
 
 Install into the current project instead of your user Pi settings:
@@ -87,13 +88,15 @@ pairs:
     - anthropic/claude-sonnet-4
     - openai/gpt-4o
 
-# Optional: omit this block to keep balanced default synthesis.
+# Optional: language accepts ja or en; it defaults to ja. Omit synthesis to use
+# Japanese synthesis and the balanced mode.
 synthesis:
+  language: en # ja | en
   mode: decision # balanced | decision | critique | concise
   instructions: "Prioritize concrete next steps."
 ```
 
-`/twins:run` uses the `default` pair when present. If `default` is missing and multiple pairs are configured, it prompts you to choose one; with a single pair, that pair is used automatically. The optional top-level `synthesis` block sets reusable defaults for the final answer; existing configs with only `pairs:` keep the balanced behavior.
+`synthesis.language` accepts `ja` or `en` and defaults to Japanese when omitted. `/twins:run` uses the configured language without prompting. The optional top-level `synthesis` block sets reusable defaults for the final answer; existing configs with only `pairs:` keep Japanese, balanced synthesis. `/twins:run` uses the `default` pair when present. If `default` is missing and multiple pairs are configured, it prompts you to choose one; with a single pair, that pair is used automatically.
 
 Run `/twins:config` to create a starter file, or `/twins:scan` to list model IDs.
 
@@ -111,10 +114,13 @@ The `twins_run` tool is also available for agent-driven twin runs. Tool calls ma
 {
   "prompt": "Choose the safest rollout plan for this migration",
   "pair": "default",
+  "synthesisLanguage": "en",
   "synthesisMode": "decision",
   "synthesisInstructions": "Call out rollback risks explicitly."
 }
 ```
+
+For one `twins_run` call, `synthesisLanguage` accepts `ja` or `en` and overrides `synthesis.language`; when neither is set, the final answer is Japanese.
 
 ## Package contents
 

@@ -72,10 +72,13 @@ Override synthesis defaults for one tool call:
 {
   "prompt": "Compare SQLite vs PostgreSQL for a small SaaS app",
   "pair": "default",
+  "synthesisLanguage": "en",
   "synthesisMode": "decision",
   "synthesisInstructions": "End with a recommended choice and migration caveats."
 }
 ```
+
+`synthesisLanguage` accepts `ja` or `en` and overrides the configured language for this call. Without an override or config setting, synthesis stays in Japanese.
 
 When both models fail, the tool returns `isError: true` with per-model messages (for example `anthropic/claude-sonnet-4: Model not found: …; google/gemini-2.5-pro: …`). See [`docs/troubleshooting.md`](troubleshooting.md) for fixes.
 
@@ -90,8 +93,10 @@ pairs:
     - anthropic/claude-sonnet-4
     - openai/gpt-4o
 
-# Optional synthesis defaults; omit for balanced behavior.
+# Optional synthesis defaults. Language accepts ja or en and defaults to ja.
+# If this block is omitted, synthesis is Japanese and balanced.
 synthesis:
+  language: en # ja | en
   mode: critique # balanced | decision | critique | concise
   instructions: "Highlight uncertain claims before the final answer."
 ```
@@ -105,4 +110,4 @@ Synthesis modes:
 | `critique` | You want disagreements and uncertainty surfaced first |
 | `concise` | You want a shorter final answer |
 
-Per-call overrides via `twins_run` (`synthesisMode`, `synthesisInstructions`) take precedence over the YAML defaults.
+Per-call overrides via `twins_run` (`synthesisLanguage`, `synthesisMode`, `synthesisInstructions`) take precedence over the YAML defaults. `/twins:run` uses the configured language without a picker.
