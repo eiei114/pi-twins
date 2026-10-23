@@ -2,13 +2,13 @@
   "schema_version": 1,
   "verification_contract": "pi-sdk-behavior-v2",
   "sdk_versions": {
-    "@earendil-works/pi-agent-core": "1.2.0",
-    "@earendil-works/pi-ai": "1.2.0",
-    "@earendil-works/pi-coding-agent": "1.2.0",
-    "@earendil-works/pi-tui": "1.2.0"
+    "@earendil-works/pi-agent-core": "1.4.0",
+    "@earendil-works/pi-ai": "1.4.0",
+    "@earendil-works/pi-coding-agent": "1.4.0",
+    "@earendil-works/pi-tui": "1.4.0"
   },
   "platform": "win32",
-  "model_inference": "offline deterministic OpenAI-compatible fixture server; actual Pi 1.2.0 process, package extension/tool execution, registry and provider client are not mocked",
+  "model_inference": "offline deterministic OpenAI-compatible fixture server; actual Pi 1.4.0 process, package extension/tool execution, registry and provider client are not mocked",
   "unhandled_errors": 0,
   "extension_load_errors": 0,
   "cases": [
@@ -32,12 +32,12 @@
       "command": "node scripts/pi-sdk-smoke.mjs",
       "exit_code": 0,
       "passed": true,
-      "evidence": "{\"id\":\"inventory\",\"type\":\"response\",\"command\":\"get_commands\",\"success\":true,\"data\":{\"commands\":[{\"name\":\"twins:scan\",\"description\":\"Display available models for twin pairs\",\"source\":\"extension\",\"sourceInfo\":{\"path\":\"<checkout>\\\\extensions\\\\index.ts\",\"source\":\"cli\",\"scope\":\"temporary\",\"origin\":\"top-level\"}},{\"name\":\"twins:config\",\"description\":\"Create or show the pi-twins configuration file\",\"source\":\"extension\",\"sourceInfo\":{\"path\":\"<checkout>\\\\extensions\\\\index.ts\",\"source\":\"cli\",\"scope\":\"temporary\",\"origin\":\"top-level\"}},{\"name\":\"twins:run\",\"description\":\"Ask two models the same question and synthesize\",\"source\":\"extension\",\"sourceInfo\":{\"path\":\"<checkout>\\\\extensions\\\\index.ts\",\"source\":\"cli\",\"scope\":\"temporary\",\"origin\":\"top-level\"}}]}}\n{\"id\":\"feature-prompt\",\"type\":\"response\",\"command\":\"prompt\",\"success\":true,\"data\":{\"disposition\":\"started\"}}\n{\"type\":\"tool_execution_start\",\"toolCallId\":\"twins-smoke-call\",\"toolName\":\"twins_run\",\"args\":{\"prompt\":\"compatibility smoke question\"}}\n{\"type\":\"tool_execution_end\",\"toolCallId\":\"twins-smoke-call\",\"toolName\":\"twins_run\",\"result\":{\"content\":[{\"type\":\"text\",\"text\":\"## pi-twins — model responses\\n\\n**Prompt**\\ncompatibility smoke question\\n\\n**Model A**: `openai/smoke-a`\\nMODEL_A_RESPONSE\\n\\n**Model B**: `openai/smoke-b`\\nMODEL_B_RESPONSE\\n\\n**Synthesis**\\nSYNTHESIS_RESPONSE\"}],\"details\":{\"pair\":[\"openai/smoke-a\",\"openai/smoke-b\"],\"modelA\":\"openai/smoke-a\",\"modelB\":\"openai/smoke-b\"}},\"isError\":false,\"durationMs\":25}\n{\"type\":\"agent_settled\",\"aborted\":false}\n\nprocess_exit_observed=true; close_observed=true; timed_out=false; process_error=none; signal=none",
+      "evidence": "{\"id\":\"inventory\",\"type\":\"response\",\"command\":\"get_commands\",\"success\":true,\"data\":{\"commands\":[{\"name\":\"twins:scan\",\"description\":\"Display available models for twin pairs\",\"source\":\"extension\",\"sourceInfo\":{\"path\":\"<checkout>\\\\extensions\\\\index.ts\",\"source\":\"cli\",\"scope\":\"temporary\",\"origin\":\"top-level\"}},{\"name\":\"twins:config\",\"description\":\"Create or show the pi-twins configuration file\",\"source\":\"extension\",\"sourceInfo\":{\"path\":\"<checkout>\\\\extensions\\\\index.ts\",\"source\":\"cli\",\"scope\":\"temporary\",\"origin\":\"top-level\"}},{\"name\":\"twins:run\",\"description\":\"Ask two models the same question and synthesize\",\"source\":\"extension\",\"sourceInfo\":{\"path\":\"<checkout>\\\\extensions\\\\index.ts\",\"source\":\"cli\",\"scope\":\"temporary\",\"origin\":\"top-level\"}}]}}\n{\"id\":\"feature-prompt\",\"type\":\"response\",\"command\":\"prompt\",\"success\":true,\"data\":{\"disposition\":\"started\"}}\n{\"type\":\"tool_execution_start\",\"toolCallId\":\"twins-smoke-call\",\"toolName\":\"twins_run\",\"args\":{\"prompt\":\"compatibility smoke question\"}}\n{\"type\":\"tool_execution_end\",\"toolCallId\":\"twins-smoke-call\",\"toolName\":\"twins_run\",\"result\":{\"content\":[{\"type\":\"text\",\"text\":\"## pi-twins — model responses\\n\\n**Prompt**\\ncompatibility smoke question\\n\\n**Model A**: `openai/smoke-a`\\nMODEL_A_RESPONSE\\n\\n**Model B**: `openai/smoke-b`\\nMODEL_B_RESPONSE\\n\\n**Synthesis**\\nSYNTHESIS_RESPONSE\"}],\"details\":{\"pair\":[\"openai/smoke-a\",\"openai/smoke-b\"],\"modelA\":\"openai/smoke-a\",\"modelB\":\"openai/smoke-b\"}},\"isError\":false,\"durationMs\":14}\n{\"type\":\"agent_settled\",\"aborted\":false}\n\nprocess_exit_observed=true; close_observed=true; timed_out=false; process_error=none; signal=none",
       "assertions": [
         {
           "id": "feature_response",
           "expected": "The real twins_run tool returns both model responses and a synthesis",
-          "observed": "{\"type\":\"tool_execution_end\",\"toolCallId\":\"twins-smoke-call\",\"toolName\":\"twins_run\",\"result\":{\"content\":[{\"type\":\"text\",\"text\":\"## pi-twins — model responses\\n\\n**Prompt**\\ncompatibility smoke question\\n\\n**Model A**: `openai/smoke-a`\\nMODEL_A_RESPONSE\\n\\n**Model B**: `openai/smoke-b`\\nMODEL_B_RESPONSE\\n\\n**Synthesis**\\nSYNTHESIS_RESPONSE\"}],\"details\":{\"pair\":[\"openai/smoke-a\",\"openai/smoke-b\"],\"modelA\":\"openai/smoke-a\",\"modelB\":\"openai/smoke-b\"}},\"isError\":false,\"durationMs\":25}",
+          "observed": "{\"type\":\"tool_execution_end\",\"toolCallId\":\"twins-smoke-call\",\"toolName\":\"twins_run\",\"result\":{\"content\":[{\"type\":\"text\",\"text\":\"## pi-twins — model responses\\n\\n**Prompt**\\ncompatibility smoke question\\n\\n**Model A**: `openai/smoke-a`\\nMODEL_A_RESPONSE\\n\\n**Model B**: `openai/smoke-b`\\nMODEL_B_RESPONSE\\n\\n**Synthesis**\\nSYNTHESIS_RESPONSE\"}],\"details\":{\"pair\":[\"openai/smoke-a\",\"openai/smoke-b\"],\"modelA\":\"openai/smoke-a\",\"modelB\":\"openai/smoke-b\"}},\"isError\":false,\"durationMs\":14}",
           "passed": true
         }
       ]
@@ -47,12 +47,12 @@
       "command": "node scripts/pi-sdk-smoke.mjs",
       "exit_code": 0,
       "passed": true,
-      "evidence": "{\"id\":\"inventory\",\"type\":\"response\",\"command\":\"get_commands\",\"success\":true,\"data\":{\"commands\":[{\"name\":\"twins:scan\",\"description\":\"Display available models for twin pairs\",\"source\":\"extension\",\"sourceInfo\":{\"path\":\"<checkout>\\\\extensions\\\\index.ts\",\"source\":\"cli\",\"scope\":\"temporary\",\"origin\":\"top-level\"}},{\"name\":\"twins:config\",\"description\":\"Create or show the pi-twins configuration file\",\"source\":\"extension\",\"sourceInfo\":{\"path\":\"<checkout>\\\\extensions\\\\index.ts\",\"source\":\"cli\",\"scope\":\"temporary\",\"origin\":\"top-level\"}},{\"name\":\"twins:run\",\"description\":\"Ask two models the same question and synthesize\",\"source\":\"extension\",\"sourceInfo\":{\"path\":\"<checkout>\\\\extensions\\\\index.ts\",\"source\":\"cli\",\"scope\":\"temporary\",\"origin\":\"top-level\"}}]}}\n{\"id\":\"feature-prompt\",\"type\":\"response\",\"command\":\"prompt\",\"success\":true,\"data\":{\"disposition\":\"started\"}}\n{\"type\":\"tool_execution_start\",\"toolCallId\":\"twins-smoke-call\",\"toolName\":\"twins_run\",\"args\":{\"prompt\":\"compatibility smoke question\"}}\n{\"type\":\"tool_execution_end\",\"toolCallId\":\"twins-smoke-call\",\"toolName\":\"twins_run\",\"result\":{\"content\":[{\"type\":\"text\",\"text\":\"pi-twins error: openai/missing-a: Model not found: openai/missing-a. Run /twins:scan and update ~/.pi/twins.yaml.; openai/missing-b: Model not found: openai/missing-b. Run /twins:scan and update ~/.pi/twins.yaml.\"}],\"details\":{\"error\":true},\"isError\":true},\"isError\":true,\"durationMs\":7}\n{\"type\":\"agent_settled\",\"aborted\":false}\n\nprocess_exit_observed=true; close_observed=true; timed_out=false; process_error=none; signal=none",
+      "evidence": "{\"id\":\"inventory\",\"type\":\"response\",\"command\":\"get_commands\",\"success\":true,\"data\":{\"commands\":[{\"name\":\"twins:scan\",\"description\":\"Display available models for twin pairs\",\"source\":\"extension\",\"sourceInfo\":{\"path\":\"<checkout>\\\\extensions\\\\index.ts\",\"source\":\"cli\",\"scope\":\"temporary\",\"origin\":\"top-level\"}},{\"name\":\"twins:config\",\"description\":\"Create or show the pi-twins configuration file\",\"source\":\"extension\",\"sourceInfo\":{\"path\":\"<checkout>\\\\extensions\\\\index.ts\",\"source\":\"cli\",\"scope\":\"temporary\",\"origin\":\"top-level\"}},{\"name\":\"twins:run\",\"description\":\"Ask two models the same question and synthesize\",\"source\":\"extension\",\"sourceInfo\":{\"path\":\"<checkout>\\\\extensions\\\\index.ts\",\"source\":\"cli\",\"scope\":\"temporary\",\"origin\":\"top-level\"}}]}}\n{\"id\":\"feature-prompt\",\"type\":\"response\",\"command\":\"prompt\",\"success\":true,\"data\":{\"disposition\":\"started\"}}\n{\"type\":\"tool_execution_start\",\"toolCallId\":\"twins-smoke-call\",\"toolName\":\"twins_run\",\"args\":{\"prompt\":\"compatibility smoke question\"}}\n{\"type\":\"tool_execution_end\",\"toolCallId\":\"twins-smoke-call\",\"toolName\":\"twins_run\",\"result\":{\"content\":[{\"type\":\"text\",\"text\":\"pi-twins error: openai/missing-a: Model not found: openai/missing-a. Run /twins:scan and update ~/.pi/twins.yaml.; openai/missing-b: Model not found: openai/missing-b. Run /twins:scan and update ~/.pi/twins.yaml.\"}],\"details\":{\"error\":true},\"isError\":true},\"isError\":true,\"durationMs\":5}\n{\"type\":\"agent_settled\",\"aborted\":false}\n\nprocess_exit_observed=true; close_observed=true; timed_out=false; process_error=none; signal=none",
       "assertions": [
         {
           "id": "handled_error",
           "expected": "Missing configured models produce a handled twins_run error result",
-          "observed": "{\"type\":\"tool_execution_end\",\"toolCallId\":\"twins-smoke-call\",\"toolName\":\"twins_run\",\"result\":{\"content\":[{\"type\":\"text\",\"text\":\"pi-twins error: openai/missing-a: Model not found: openai/missing-a. Run /twins:scan and update ~/.pi/twins.yaml.; openai/missing-b: Model not found: openai/missing-b. Run /twins:scan and update ~/.pi/twins.yaml.\"}],\"details\":{\"error\":true},\"isError\":true},\"isError\":true,\"durationMs\":7}",
+          "observed": "{\"type\":\"tool_execution_end\",\"toolCallId\":\"twins-smoke-call\",\"toolName\":\"twins_run\",\"result\":{\"content\":[{\"type\":\"text\",\"text\":\"pi-twins error: openai/missing-a: Model not found: openai/missing-a. Run /twins:scan and update ~/.pi/twins.yaml.; openai/missing-b: Model not found: openai/missing-b. Run /twins:scan and update ~/.pi/twins.yaml.\"}],\"details\":{\"error\":true},\"isError\":true},\"isError\":true,\"durationMs\":5}",
           "passed": true
         }
       ]
@@ -94,7 +94,7 @@
         {
           "id": "native_shell_boundary",
           "expected": "The native host shell launches this checkout's pinned Pi CLI and prints its exact version",
-          "observed": "{\"exit_code\":0,\"exitObserved\":true,\"output\":\"1.2.0\",\"expectedVersion\":\"1.2.0\"}",
+          "observed": "{\"exit_code\":0,\"exitObserved\":true,\"output\":\"1.4.0\",\"expectedVersion\":\"1.4.0\"}",
           "passed": true
         }
       ]

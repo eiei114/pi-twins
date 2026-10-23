@@ -288,7 +288,7 @@ try {
     verification_contract: VERIFICATION_CONTRACT,
     sdk_versions: sdkVersions,
     platform: process.platform,
-    model_inference: "offline deterministic OpenAI-compatible fixture server; actual Pi 1.2.0 process, package extension/tool execution, registry and provider client are not mocked",
+    model_inference: `offline deterministic OpenAI-compatible fixture server; actual Pi ${cliManifest.version} process, package extension/tool execution, registry and provider client are not mocked`,
     unhandled_errors: cases.filter((item) => item.hasUnhandledError).length,
     extension_load_errors: cases.filter((item) => item.hasLoadError
       || (item.name === "extension_load" && !item.passed)
