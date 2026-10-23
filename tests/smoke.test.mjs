@@ -3,6 +3,8 @@ import { readFile } from "node:fs/promises";
 import test from "node:test";
 
 const packageJson = JSON.parse(await readFile(new URL("../package.json", import.meta.url), "utf8"));
+const piSdkSmokeScript = await readFile(new URL("../scripts/pi-sdk-smoke.mjs", import.meta.url), "utf8");
+const piSdkSmokeReport = JSON.parse(await readFile(new URL("../docs/verification/pi-sdk-smoke.json", import.meta.url), "utf8"));
 const readme = (await readFile(new URL("../README.md", import.meta.url), "utf8")).replace(/\r\n/g, "\n");
 const changelog = await readFile(new URL("../CHANGELOG.md", import.meta.url), "utf8");
 const contributing = await readFile(new URL("../CONTRIBUTING.md", import.meta.url), "utf8");
@@ -72,6 +74,27 @@ test("package is discoverable as a Pi package", () => {
 
 test("package uses public publish config", () => {
   assert.equal(packageJson.publishConfig.access, "public");
+});
+
+test("curated Pi SDK smoke report matches the pinned SDK and actual host versions", () => {
+  for (const name of [
+    "@earendil-works/pi-agent-core",
+    "@earendil-works/pi-ai",
+    "@earendil-works/pi-coding-agent",
+    "@earendil-works/pi-tui",
+  ]) {
+    assert.equal(piSdkSmokeReport.sdk_versions[name], packageJson.devDependencies[name]);
+  }
+
+  const hostVersion = packageJson.devDependencies["@earendil-works/pi-coding-agent"];
+  assert.match(piSdkSmokeScript, /actual Pi \$\{cliManifest\.version\} process/);
+  assert.match(piSdkSmokeReport.model_inference, new RegExp(`actual Pi ${hostVersion} process`));
+
+  const hostShell = piSdkSmokeReport.cases.find((item) => item.name === "host_shell");
+  const shellAssertion = hostShell.assertions.find((item) => item.id === "native_shell_boundary");
+  const observedShell = JSON.parse(shellAssertion.observed);
+  assert.equal(observedShell.output, hostVersion);
+  assert.equal(observedShell.expectedVersion, hostVersion);
 });
 
 test("release and publish workflows keep publication out of the merge path", () => {
