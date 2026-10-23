@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 This project follows semantic versioning.
 
+## [0.4.1] - 2026-10-24
+
+### Changed
+
+- Update the Pi SDK development dependencies to 1.4.0 and verify against the actual Pi host (DOT-2702).
+
 ## [0.4.0] - 2026-10-19
 
 ### Added
