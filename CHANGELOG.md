@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 
 This project follows semantic versioning.
 
-## [0.4.1] - 2026-10-24
+## Unreleased
 
 ### Changed
 
@@ -159,5 +159,4 @@ This project follows semantic versioning.
 - YAML configuration system with model pair definitions.
 - Agent state machine for sequential model calling (model A → model B → synthesis).
 - Error resilience: stale state timeout, model-not-found graceful fallback.
-## Unreleased
 

@@ -10,16 +10,18 @@ const examples = await readFile(new URL("../docs/examples.md", import.meta.url),
 const autoReleaseWorkflow = await readFile(new URL("../.github/workflows/auto-release.yml", import.meta.url), "utf8");
 const publishWorkflow = await readFile(new URL("../.github/workflows/publish.yml", import.meta.url), "utf8");
 
-test("CHANGELOG top release matches package version", () => {
-  const topRelease = changelog.match(/^## \[([^\]]+)\]/m);
-  assert.ok(topRelease, "CHANGELOG should document a top-level release section");
-  assert.equal(topRelease[1], packageJson.version);
+test("CHANGELOG keeps an undated Unreleased section ahead of dated releases", () => {
+  const topHeading = changelog.match(/^## .+$/m);
+  assert.ok(topHeading, "CHANGELOG should document a top-level section");
+  assert.equal(topHeading[0], "## Unreleased");
 });
 
-test("README install pin matches package version", () => {
+test("README install pin matches the latest dated changelog release", () => {
   const pinMatch = readme.match(/^pi install npm:pi-twins@([^\s]+)$/m);
   assert.ok(pinMatch, "README should document a pinned npm install version");
-  assert.equal(pinMatch[1], packageJson.version);
+  const latestRelease = changelog.match(/^## \[([^\]]+)\] - \d{4}-\d{2}-\d{2}$/m);
+  assert.ok(latestRelease, "CHANGELOG should document a dated release");
+  assert.equal(pinMatch[1], latestRelease[1]);
 });
 
 test("README release flow requires a manual release after merging", () => {
