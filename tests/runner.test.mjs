@@ -2,12 +2,13 @@ import assert from "node:assert/strict";
 import { mock, test } from "node:test";
 
 const SYNTHESIS_TEXT = "Combined synthesized answer.";
+let completionContent = [{ type: "text", text: SYNTHESIS_TEXT }];
 
 mock.module("@earendil-works/pi-ai/compat", {
   exports: {
     completeSimple: async () => ({
       stopReason: "stop",
-      content: [{ type: "text", text: SYNTHESIS_TEXT }],
+      content: completionContent,
     }),
   },
 });
@@ -99,6 +100,28 @@ test("runSingleModel identifies the repair path for an unknown configured model"
   assert.match(result.error || "", /Model not found: unknown\/model/);
   assert.match(result.error || "", /\/twins:scan/);
   assert.match(result.error || "", /~\/\.pi\/twins\.yaml/);
+});
+
+test("runSingleModel joins text blocks while ignoring non-text content", async () => {
+  const previousContent = completionContent;
+  completionContent = [
+    { type: "text", text: "  first " },
+    { type: "thinking", text: "ignored" },
+    { type: "text", text: "second  " },
+    { type: "text", text: "" },
+    { type: "text" },
+  ];
+
+  try {
+    const result = await runSingleModel("test/model", "hello", {
+      find: () => ({ provider: "test", id: "model" }),
+      getApiKeyAndHeaders: async () => ({ ok: true, apiKey: "test" }),
+    });
+
+    assert.equal(result.response, "first \nsecond");
+  } finally {
+    completionContent = previousContent;
+  }
 });
 
 test("formatResponsesMarkdown includes successful and failed sides", () => {

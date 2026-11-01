@@ -8,6 +8,7 @@ This project follows semantic versioning.
 
 ### Changed
 
+- Reduce temporary allocations when extracting model response text (DOT-2970).
 - Update the Pi SDK development dependencies to 1.4.0 and verify against the actual Pi host (DOT-2702).
 
 ## [0.4.0] - 2026-10-19

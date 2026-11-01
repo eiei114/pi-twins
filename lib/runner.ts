@@ -58,11 +58,13 @@ function splitModelId(fullId: string): [string, string] {
 }
 
 function extractText(content: Array<{ type: string; text?: string }>): string {
-  return content
-    .filter((part): part is { type: "text"; text: string } => part.type === "text" && typeof part.text === "string")
-    .map((part) => part.text)
-    .join("\n")
-    .trim();
+  const textParts: string[] = [];
+  for (const part of content) {
+    if (part.type === "text" && typeof part.text === "string") {
+      textParts.push(part.text);
+    }
+  }
+  return textParts.join("\n").trim();
 }
 
 export async function runSingleModel(
