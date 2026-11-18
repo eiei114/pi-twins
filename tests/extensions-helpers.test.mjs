@@ -49,13 +49,25 @@ test("resolvePair falls back to default pair when pairName is omitted", () => {
   ]);
 });
 
-test("resolvePair falls back to default pair when pairName is unknown", () => {
+test("resolvePair throws when pairName is unknown and lists available pairs", () => {
   const config = makeConfig({
     [DEFAULT_PAIR_NAME]: ["anthropic/claude-sonnet-4", "google/gemini-2.5-pro"],
     coding: ["openai/gpt-4o", "deepseek/deepseek-r1"],
   });
 
-  assert.deepEqual(resolvePair(config, "missing"), [
+  assert.throws(
+    () => resolvePair(config, "missing"),
+    { message: 'Pair "missing" not found in config. Available: default, coding' },
+  );
+});
+
+test("resolvePair treats a blank pair name as omitted", () => {
+  const config = makeConfig({
+    [DEFAULT_PAIR_NAME]: ["anthropic/claude-sonnet-4", "google/gemini-2.5-pro"],
+    coding: ["openai/gpt-4o", "deepseek/deepseek-r1"],
+  });
+
+  assert.deepEqual(resolvePair(config, "   "), [
     "anthropic/claude-sonnet-4",
     "google/gemini-2.5-pro",
   ]);

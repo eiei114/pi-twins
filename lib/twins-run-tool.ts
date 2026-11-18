@@ -70,6 +70,44 @@ export function buildTwinsRunErrorResult(message: string): TwinsRunToolResult {
   };
 }
 
+type TwinsRunToolParams = {
+  prompt: string;
+  pair?: string;
+  synthesisLanguage?: SynthesisLanguage;
+  synthesisMode?: SynthesisPromptOptions["mode"];
+  synthesisInstructions?: string;
+};
+
+export async function executeTwinsRun(
+  params: TwinsRunToolParams,
+  signal: AbortSignal | undefined,
+  modelRegistry: ExtensionContext["modelRegistry"],
+  config?: TwinsConfig,
+): Promise<TwinsRunToolResult> {
+  try {
+    const resolvedConfig = config ?? loadConfig();
+    const pair = resolvePair(resolvedConfig, params.pair);
+    const synthesisOptions = resolveSynthesisOptions(resolvedConfig, params);
+
+    const result = await runTwins(params.prompt, pair, modelRegistry, { signal });
+    if (!result.responseA && !result.responseB) {
+      throw new Error(formatBothModelsFailedMessage(result));
+    }
+
+    const synthesis = await synthesizeResponses(
+      result,
+      modelRegistry,
+      pair[0],
+      signal,
+      synthesisOptions,
+    );
+    return buildTwinsRunSuccessResult(result, pair, synthesis);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    return buildTwinsRunErrorResult(message);
+  }
+}
+
 export const twinsRunTool = defineTool({
   name: "twins_run",
   label: "Twins Run",
@@ -82,27 +120,6 @@ export const twinsRunTool = defineTool({
   ],
   parameters: TwinsRunToolParametersSchema,
   async execute(_toolCallId, params, signal, _onUpdate, ctx: ExtensionContext) {
-    try {
-      const config = loadConfig();
-      const pair = resolvePair(config, params.pair);
-      const synthesisOptions = resolveSynthesisOptions(config, params);
-
-      const result = await runTwins(params.prompt, pair, ctx.modelRegistry, { signal });
-      if (!result.responseA && !result.responseB) {
-        throw new Error(formatBothModelsFailedMessage(result));
-      }
-
-      const synthesis = await synthesizeResponses(
-        result,
-        ctx.modelRegistry,
-        pair[0],
-        signal,
-        synthesisOptions,
-      );
-      return buildTwinsRunSuccessResult(result, pair, synthesis);
-    } catch (error) {
-      const message = error instanceof Error ? error.message : String(error);
-      return buildTwinsRunErrorResult(message);
-    }
+    return executeTwinsRun(params, signal, ctx.modelRegistry);
   },
 });
