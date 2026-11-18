@@ -17,6 +17,7 @@ const {
   groupByProvider,
   groupModelsByProvider,
   scanRegistryModels,
+  formatScanMessage,
 } = await import("../lib/scanner.ts");
 const {
   SYNTHESIS_INSTRUCTIONS_MAX_LENGTH,
@@ -363,6 +364,7 @@ test("scanRegistryModels uses registry models when available", () => {
   });
 
   assert.equal(result.usedFallback, false);
+  assert.equal(result.fallbackReason, null);
   assert.deepEqual(Object.keys(result.groups), ["anthropic", "openai"]);
 });
 
@@ -370,6 +372,7 @@ test("scanRegistryModels falls back to curated examples for an empty registry", 
   const result = scanRegistryModels({ getAvailable: () => [] });
 
   assert.equal(result.usedFallback, true);
+  assert.equal(result.fallbackReason, "empty");
   assert.deepEqual(result.groups, groupByProvider());
 });
 
@@ -381,5 +384,24 @@ test("scanRegistryModels falls back to curated examples when the registry throws
   });
 
   assert.equal(result.usedFallback, true);
+  assert.equal(result.fallbackReason, "unavailable");
   assert.deepEqual(result.groups, groupByProvider());
+});
+
+test("scan output distinguishes an empty registry from a registry failure", () => {
+  const emptyOutput = formatScanMessage(scanRegistryModels({ getAvailable: () => [] }));
+  assert.match(emptyOutput, /no authenticated models found/i);
+  assert.match(emptyOutput, /Configure\/authenticate a provider/i);
+
+  const unavailableOutput = formatScanMessage(
+    scanRegistryModels({
+      getAvailable: () => {
+        throw new Error("registry unavailable");
+      },
+    }),
+  );
+  assert.match(unavailableOutput, /model registry is unavailable/i);
+  assert.match(unavailableOutput, /check Pi's registry\/session and retry/i);
+  assert.match(unavailableOutput, /does not indicate that provider authentication is missing/i);
+  assert.doesNotMatch(unavailableOutput, /no authenticated models found/i);
 });

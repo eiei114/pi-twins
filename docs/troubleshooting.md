@@ -25,7 +25,7 @@ pi-twins expects a YAML config at `~/.pi/twins.yaml` (or the path shown in the e
        - google/gemini-2.5-pro
    ```
 
-2. Run `/twins:scan` to see model IDs currently available from Pi's authenticated registry, then edit the pair entries to match your providers. If the command labels its output as curated examples, it did not find authenticated models; configure a provider in Pi before relying on those IDs.
+2. Run `/twins:scan` to see model IDs currently available from Pi's registry, then edit the pair entries to match your providers. If it labels the curated examples as “no authenticated models found,” configure a provider in Pi before relying on those IDs. If it says the registry is unavailable, check the Pi registry/session and retry instead; that message does not mean authentication is missing.
 3. Retry `/twins:run`.
 
 If you cancel the “Create default config?” prompt in `/twins:run`, the command exits without creating a file. Run `/twins:config` or create `~/.pi/twins.yaml` yourself.
@@ -46,7 +46,7 @@ The model ID in `~/.pi/twins.yaml` is misspelled, outdated, or not registered in
 
 **Fix**
 
-1. Run `/twins:scan` and copy an **exact** registry-listed ID (format: `provider/model-id`). The list reflects models currently available in Pi; a curated fallback is only illustrative, not proof of authentication.
+1. Run `/twins:scan` and copy an **exact** registry-listed ID (format: `provider/model-id`). The list reflects models currently available in Pi; curated examples are only illustrative, not proof of availability. A “no authenticated models found” fallback points to provider setup, while a registry-unavailable message calls for checking the Pi session and retrying.
 2. Update the failing entry in `~/.pi/twins.yaml`.
 3. Confirm the provider is configured in Pi (API keys, auth) for that model.
 4. Retry the run.
@@ -105,7 +105,7 @@ Neither configured model returned usable text. Typical reasons:
 
 1. Read the full error string — it often lists per-model failures (`provider/model: reason`).
 2. Fix auth for each provider in Pi settings; verify keys work outside pi-twins.
-3. Run `/twins:scan` and confirm both IDs are currently available and spelled correctly. If it shows curated examples instead, check provider authentication in Pi first.
+3. Run `/twins:scan` and confirm both IDs are currently available and spelled correctly. If it shows curated examples because no authenticated models were found, check provider authentication in Pi. If the registry is unavailable, check the Pi registry/session and retry before changing authentication settings.
 4. Test with a simpler prompt and a known-good pair (for example the `default` template from `/twins:config`).
 5. If only one model fails, pi-twins can still synthesize from the successful response; when **both** fail, there is nothing to merge — resolve both sides before retrying.
 

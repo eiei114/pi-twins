@@ -27,6 +27,7 @@ export interface RegistryModel {
 export interface RegistryScanResult {
   groups: Record<string, ModelEntry[]>;
   usedFallback: boolean;
+  fallbackReason: "empty" | "unavailable" | null;
 }
 
 function compareStrings(a: string, b: string): number {
@@ -69,12 +70,38 @@ export function scanRegistryModels(registry: {
 }): RegistryScanResult {
   try {
     const groups = groupModelsByProvider(registry.getAvailable());
-    if (Object.keys(groups).length > 0) return { groups, usedFallback: false };
+    if (Object.keys(groups).length > 0) return { groups, usedFallback: false, fallbackReason: null };
   } catch {
-    // Registry failures should not prevent users from seeing the curated examples.
+    // Keep registry errors distinct from a successful query that returned no models.
+    return { groups: groupByProvider(), usedFallback: true, fallbackReason: "unavailable" };
   }
 
-  return { groups: groupByProvider(), usedFallback: true };
+  return { groups: groupByProvider(), usedFallback: true, fallbackReason: "empty" };
+}
+
+/** Format a scan result without mislabeling registry failures as missing authentication. */
+export function formatScanMessage({ groups, usedFallback, fallbackReason }: RegistryScanResult): string {
+  const lines: string[] = [
+    !usedFallback
+      ? "**Available models from Pi's registry:**"
+      : fallbackReason === "unavailable"
+        ? "**Curated examples (Pi's model registry is unavailable):**"
+        : "**Curated examples (no authenticated models found):**",
+    "",
+  ];
+  for (const [provider, models] of Object.entries(groups)) {
+    lines.push(`**${provider}**`);
+    for (const model of models) lines.push(`- \`${model.id}\` — ${model.displayName}`);
+    lines.push("");
+  }
+  lines.push(
+    !usedFallback
+      ? "Use these exact IDs in ~/.pi/twins.yaml."
+      : fallbackReason === "unavailable"
+        ? "The registry could not be queried, so these examples are not verified available IDs. Check Pi's registry/session and retry `/twins:scan`; this does not indicate that provider authentication is missing."
+        : "These examples are not a live registry result. Configure/authenticate a provider in Pi, then run `/twins:scan` again.",
+  );
+  return lines.join("\n");
 }
 
 /** Get list of available models. */

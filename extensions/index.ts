@@ -7,31 +7,20 @@ import {
   formatResponsesMarkdown,
   runTwins,
 } from "../lib/runner.ts";
-import { scanRegistryModels } from "../lib/scanner.ts";
+import { formatScanMessage, scanRegistryModels } from "../lib/scanner.ts";
 import { resolveSynthesisOptions, twinsRunTool } from "../lib/twins-run-tool.ts";
 
 export default function (pi: ExtensionAPI) {
   pi.registerCommand("twins:scan", {
     description: "Display available models for twin pairs",
     handler: async (_args, ctx) => {
-      const { groups, usedFallback } = scanRegistryModels(ctx.modelRegistry);
-      const lines: string[] = [
-        usedFallback
-          ? "**Curated examples (no authenticated models found):**"
-          : "**Available models from Pi's registry:**",
-        "",
-      ];
-      for (const [provider, models] of Object.entries(groups)) {
-        lines.push(`**${provider}**`);
-        for (const m of models) lines.push(`- \`${m.id}\` — ${m.displayName}`);
-        lines.push("");
-      }
-      lines.push(
-        usedFallback
-          ? "These examples are not a live registry result. Configure a provider in Pi, then run `/twins:scan` again."
-          : "Use these exact IDs in ~/.pi/twins.yaml.",
-      );
-      pi.sendMessage({ customType: "twins", content: lines.join("\n"), display: true, details: { kind: "scan" } });
+      const result = scanRegistryModels(ctx.modelRegistry);
+      pi.sendMessage({
+        customType: "twins",
+        content: formatScanMessage(result),
+        display: true,
+        details: { kind: "scan" },
+      });
     },
   });
 
