@@ -37,6 +37,16 @@ test("resolvePair returns named pair when pairName exists", () => {
   assert.deepEqual(resolvePair(config, "coding"), ["openai/gpt-4o", "deepseek/deepseek-r1"]);
 });
 
+test("resolvePair matches explicit pair names exactly, including surrounding spaces", () => {
+  const config = makeConfig({
+    default: ["anthropic/claude-sonnet-4", "google/gemini-2.5-pro"],
+    coding: ["openai/gpt-4o", "deepseek/deepseek-r1"],
+    " coding ": ["openai/o3", "google/gemini-2.5-flash"],
+  });
+
+  assert.deepEqual(resolvePair(config, " coding "), ["openai/o3", "google/gemini-2.5-flash"]);
+});
+
 test("resolvePair falls back to default pair when pairName is omitted", () => {
   const config = makeConfig({
     [DEFAULT_PAIR_NAME]: ["anthropic/claude-sonnet-4", "google/gemini-2.5-pro"],

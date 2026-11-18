@@ -78,6 +78,31 @@ test("twins_run returns an unknown-pair error without calling any model", async 
   assert.deepEqual(modelLookups, []);
 });
 
+test("twins_run preserves an exact explicit pair name with surrounding spaces", async () => {
+  const modelLookups = [];
+  const config = {
+    pairs: {
+      default: ["anthropic/claude-sonnet-4", "google/gemini-2.5-pro"],
+      coding: ["openai/gpt-4o", "deepseek/deepseek-r1"],
+      " coding ": ["openai/o3", "google/gemini-2.5-flash"],
+    },
+  };
+
+  const result = await executeTwinsRun(
+    { prompt: "test", pair: " coding " },
+    new AbortController().signal,
+    {
+      find(provider, modelId) {
+        modelLookups.push(`${provider}/${modelId}`);
+      },
+    },
+    config,
+  );
+
+  assert.equal(result.isError, true);
+  assert.deepEqual(modelLookups, ["openai/o3", "google/gemini-2.5-flash"]);
+});
+
 test("resolveSynthesisOptions merges config defaults with per-call overrides", () => {
   const config = {
     pairs: {
