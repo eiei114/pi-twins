@@ -4,6 +4,7 @@ import test from "node:test";
 const {
   buildTwinsRunSuccessResult,
   buildTwinsRunErrorResult,
+  executeTwinsRun,
   resolveSynthesisOptions,
 } = await import("../lib/twins-run-tool.ts");
 
@@ -51,6 +52,55 @@ test("buildTwinsRunErrorResult surfaces pair-resolution failure messaging", () =
     `pi-twins error: ${message}`,
   );
   assert.deepEqual(toolResult.details, { error: true });
+});
+
+test("twins_run returns an unknown-pair error without calling any model", async () => {
+  const modelLookups = [];
+  const config = {
+    pairs: {
+      default: ["anthropic/claude-sonnet-4", "google/gemini-2.5-pro"],
+      coding: ["openai/gpt-4o", "deepseek/deepseek-r1"],
+    },
+  };
+
+  const result = await executeTwinsRun(
+    { prompt: "test", pair: "codng" },
+    new AbortController().signal,
+    { find(modelId) { modelLookups.push(modelId); } },
+    config,
+  );
+
+  assert.equal(result.isError, true);
+  assert.equal(
+    result.content[0].text,
+    'pi-twins error: Pair "codng" not found in config. Available: default, coding',
+  );
+  assert.deepEqual(modelLookups, []);
+});
+
+test("twins_run preserves an exact explicit pair name with surrounding spaces", async () => {
+  const modelLookups = [];
+  const config = {
+    pairs: {
+      default: ["anthropic/claude-sonnet-4", "google/gemini-2.5-pro"],
+      coding: ["openai/gpt-4o", "deepseek/deepseek-r1"],
+      " coding ": ["openai/o3", "google/gemini-2.5-flash"],
+    },
+  };
+
+  const result = await executeTwinsRun(
+    { prompt: "test", pair: " coding " },
+    new AbortController().signal,
+    {
+      find(provider, modelId) {
+        modelLookups.push(`${provider}/${modelId}`);
+      },
+    },
+    config,
+  );
+
+  assert.equal(result.isError, true);
+  assert.deepEqual(modelLookups, ["openai/o3", "google/gemini-2.5-flash"]);
 });
 
 test("resolveSynthesisOptions merges config defaults with per-call overrides", () => {

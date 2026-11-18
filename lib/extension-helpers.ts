@@ -6,9 +6,16 @@ export function resolvePair(config: TwinsConfig, pairName?: string): [string, st
   const names = Object.keys(config.pairs);
   if (names.length === 0) throw new Error("No pairs found in ~/.pi/twins.yaml");
 
+  const requestedName = pairName?.trim() ? pairName : undefined;
+  if (requestedName && !Object.hasOwn(config.pairs, requestedName)) {
+    throw new Error(
+      `Pair "${requestedName}" not found in config. Available: ${names.join(", ")}`,
+    );
+  }
+
   const resolvedName =
-    pairName && config.pairs[pairName]
-      ? pairName
+    requestedName
+      ? requestedName
       : config.pairs[DEFAULT_PAIR_NAME]
         ? DEFAULT_PAIR_NAME
         : names[0];

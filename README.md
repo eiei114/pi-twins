@@ -123,6 +123,7 @@ The `twins_run` tool is also available for agent-driven twin runs. Tool calls ma
 ```
 
 For one `twins_run` call, `synthesisLanguage` accepts `ja` or `en` and overrides `synthesis.language`; when neither is set, the final answer is Japanese.
+The optional `pair` name uses the configured `default` pair, or the first pair when no default exists, if omitted or blank. An unknown explicit name returns an error listing the available pair names instead of running a different pair.
 
 ## Package contents
 
