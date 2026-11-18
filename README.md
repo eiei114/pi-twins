@@ -24,7 +24,7 @@ pi-twins sends your prompt to two AI models in parallel, then Pi itself reads bo
 - **Synthesis language** — choose Japanese or English for the final answer (Japanese by default)
 - **Synthesis controls** — choose balanced, decision, critique, or concise final-answer modes with optional instructions
 - **YAML configuration** — define model pairs (e.g. Claude + Gemini) in `~/.pi/twins.yaml`
-- **Model discovery** — `/twins:scan` to see which models are available
+- **Model discovery** — `/twins:scan` lists models currently available through Pi's registry, with labeled curated examples if it returns no models or cannot be queried
 - **On-demand only** — activate via `/twins:run` when you want it, no overhead otherwise
 
 ## Install
@@ -79,6 +79,8 @@ Enter a prompt when asked. Pi runs both models in parallel and synthesizes one a
 
 Create `~/.pi/twins.yaml`:
 
+The IDs below are examples. Run `/twins:scan` to see the models currently available in your Pi session and use those IDs for your pairs.
+
 ```yaml
 pairs:
   default:
@@ -98,14 +100,14 @@ synthesis:
 
 `synthesis.language` accepts `ja` or `en` and defaults to Japanese when omitted. `/twins:run` uses the configured language without prompting. The optional top-level `synthesis` block sets reusable defaults for the final answer; existing configs with only `pairs:` keep Japanese, balanced synthesis. `/twins:run` uses the `default` pair when present. If `default` is missing and multiple pairs are configured, it prompts you to choose one; with a single pair, that pair is used automatically.
 
-Run `/twins:config` to create a starter file, or `/twins:scan` to list model IDs.
+Run `/twins:config` to create a starter file, or `/twins:scan` to list models currently available from Pi's registry. If the registry returns no models, the command labels curated examples as a fallback and recommends configuring a provider. If Pi's registry cannot be queried, it labels that failure separately and recommends checking the Pi session before retrying; neither case presents the examples as live results.
 
 ## Commands
 
 | Command | Description |
 |---|---|
 | `/twins:run` | Send the same prompt to two models and synthesize one answer |
-| `/twins:scan` | List available model IDs for `~/.pi/twins.yaml` |
+| `/twins:scan` | List registry-available model IDs for `~/.pi/twins.yaml` (or labeled curated examples when the registry is empty or unavailable) |
 | `/twins:config` | Create or show the pi-twins config file |
 
 The `twins_run` tool is also available for agent-driven twin runs. Tool calls may override synthesis defaults per request:

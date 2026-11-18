@@ -11,7 +11,14 @@ const {
   writeDefaultConfig,
   ConfigNotFoundError,
 } = await import("../lib/config.ts");
-const { scanModels, findModelById, groupByProvider } = await import("../lib/scanner.ts");
+const {
+  scanModels,
+  findModelById,
+  groupByProvider,
+  groupModelsByProvider,
+  scanRegistryModels,
+  formatScanMessage,
+} = await import("../lib/scanner.ts");
 const {
   SYNTHESIS_INSTRUCTIONS_MAX_LENGTH,
   TwinsConfigSchema,
@@ -318,4 +325,83 @@ test("groupByProvider groups models by provider", () => {
   for (const models of Object.values(groups)) {
     assert.ok(models.every((m) => m.provider === models[0].provider));
   }
+});
+
+test("groupModelsByProvider groups and sorts registry models", () => {
+  const groups = groupModelsByProvider([
+    { provider: "zeta", id: "z-model", name: "Z Model" },
+    { provider: "alpha", id: "z-model", name: "Alpha Z" },
+    { provider: "alpha", id: "a-model", name: "Alpha A" },
+  ]);
+
+  assert.deepEqual(Object.keys(groups), ["alpha", "zeta"]);
+  assert.deepEqual(groups.alpha?.map(({ id, displayName }) => [id, displayName]), [
+    ["alpha/a-model", "Alpha A"],
+    ["alpha/z-model", "Alpha Z"],
+  ]);
+  assert.deepEqual(groups.zeta?.map((model) => model.id), ["zeta/z-model"]);
+});
+
+test("groupModelsByProvider de-duplicates IDs deterministically", () => {
+  const groups = groupModelsByProvider([
+    { provider: "openai", id: "gpt-x", name: "Zulu label" },
+    { provider: "openai", id: "gpt-a", name: "GPT A" },
+    { provider: "openai", id: "gpt-x", name: "Alpha label" },
+  ]);
+
+  assert.deepEqual(groups.openai?.map(({ id, displayName }) => [id, displayName]), [
+    ["openai/gpt-a", "GPT A"],
+    ["openai/gpt-x", "Alpha label"],
+  ]);
+});
+
+test("scanRegistryModels uses registry models when available", () => {
+  const result = scanRegistryModels({
+    getAvailable: () => [
+      { provider: "openai", id: "gpt-4.1", name: "GPT 4.1" },
+      { provider: "anthropic", id: "sonnet", name: "Sonnet" },
+    ],
+  });
+
+  assert.equal(result.usedFallback, false);
+  assert.equal(result.fallbackReason, null);
+  assert.deepEqual(Object.keys(result.groups), ["anthropic", "openai"]);
+});
+
+test("scanRegistryModels falls back to curated examples for an empty registry", () => {
+  const result = scanRegistryModels({ getAvailable: () => [] });
+
+  assert.equal(result.usedFallback, true);
+  assert.equal(result.fallbackReason, "empty");
+  assert.deepEqual(result.groups, groupByProvider());
+});
+
+test("scanRegistryModels falls back to curated examples when the registry throws", () => {
+  const result = scanRegistryModels({
+    getAvailable: () => {
+      throw new Error("registry unavailable");
+    },
+  });
+
+  assert.equal(result.usedFallback, true);
+  assert.equal(result.fallbackReason, "unavailable");
+  assert.deepEqual(result.groups, groupByProvider());
+});
+
+test("scan output distinguishes an empty registry from a registry failure", () => {
+  const emptyOutput = formatScanMessage(scanRegistryModels({ getAvailable: () => [] }));
+  assert.match(emptyOutput, /no authenticated models found/i);
+  assert.match(emptyOutput, /Configure\/authenticate a provider/i);
+
+  const unavailableOutput = formatScanMessage(
+    scanRegistryModels({
+      getAvailable: () => {
+        throw new Error("registry unavailable");
+      },
+    }),
+  );
+  assert.match(unavailableOutput, /model registry is unavailable/i);
+  assert.match(unavailableOutput, /check Pi's registry\/session and retry/i);
+  assert.match(unavailableOutput, /does not indicate that provider authentication is missing/i);
+  assert.doesNotMatch(unavailableOutput, /no authenticated models found/i);
 });

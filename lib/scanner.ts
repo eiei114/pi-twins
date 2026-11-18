@@ -1,9 +1,4 @@
-/**
- * Scan for available models in Pi's provider system.
- *
- * MVP strategy: returns a curated list of well-known models.
- * Future: read from Pi's provider registry dynamically.
- */
+/** Scan for models available from Pi's provider registry. */
 
 export interface ModelEntry {
   id: string;
@@ -21,6 +16,93 @@ const KNOWN_MODELS: ModelEntry[] = [
   { id: "openai/gpt-4.1", displayName: "GPT-4.1", provider: "openai" },
   { id: "deepseek/deepseek-r1", displayName: "DeepSeek R1", provider: "deepseek" },
 ];
+
+/** The registry fields used to display an available Pi model. */
+export interface RegistryModel {
+  id: string;
+  name: string;
+  provider: string;
+}
+
+export interface RegistryScanResult {
+  groups: Record<string, ModelEntry[]>;
+  usedFallback: boolean;
+  fallbackReason: "empty" | "unavailable" | null;
+}
+
+function compareStrings(a: string, b: string): number {
+  return a < b ? -1 : a > b ? 1 : 0;
+}
+
+/** Group registry models by provider, using provider/id IDs, stable sorting, and de-duplication. */
+export function groupModelsByProvider(models: readonly RegistryModel[]): Record<string, ModelEntry[]> {
+  const sorted = models
+    .map((model) => ({
+      id: `${model.provider}/${model.id}`,
+      displayName: model.name,
+      provider: model.provider,
+    }))
+    .sort(
+      (a, b) =>
+        compareStrings(a.provider, b.provider) ||
+        compareStrings(a.id, b.id) ||
+        compareStrings(a.displayName, b.displayName),
+    );
+
+  const unique = new Map<string, ModelEntry>();
+  for (const model of sorted) {
+    if (!unique.has(model.id)) unique.set(model.id, model);
+  }
+
+  const groups = new Map<string, ModelEntry[]>();
+  for (const model of unique.values()) {
+    const providerModels = groups.get(model.provider) ?? [];
+    providerModels.push(model);
+    groups.set(model.provider, providerModels);
+  }
+
+  return Object.fromEntries(groups);
+}
+
+/** Use the authenticated registry list when available; otherwise return curated examples. */
+export function scanRegistryModels(registry: {
+  getAvailable: () => readonly RegistryModel[];
+}): RegistryScanResult {
+  try {
+    const groups = groupModelsByProvider(registry.getAvailable());
+    if (Object.keys(groups).length > 0) return { groups, usedFallback: false, fallbackReason: null };
+  } catch {
+    // Keep registry errors distinct from a successful query that returned no models.
+    return { groups: groupByProvider(), usedFallback: true, fallbackReason: "unavailable" };
+  }
+
+  return { groups: groupByProvider(), usedFallback: true, fallbackReason: "empty" };
+}
+
+/** Format a scan result without mislabeling registry failures as missing authentication. */
+export function formatScanMessage({ groups, usedFallback, fallbackReason }: RegistryScanResult): string {
+  const lines: string[] = [
+    !usedFallback
+      ? "**Available models from Pi's registry:**"
+      : fallbackReason === "unavailable"
+        ? "**Curated examples (Pi's model registry is unavailable):**"
+        : "**Curated examples (no authenticated models found):**",
+    "",
+  ];
+  for (const [provider, models] of Object.entries(groups)) {
+    lines.push(`**${provider}**`);
+    for (const model of models) lines.push(`- \`${model.id}\` — ${model.displayName}`);
+    lines.push("");
+  }
+  lines.push(
+    !usedFallback
+      ? "Use these exact IDs in ~/.pi/twins.yaml."
+      : fallbackReason === "unavailable"
+        ? "The registry could not be queried, so these examples are not verified available IDs. Check Pi's registry/session and retry `/twins:scan`; this does not indicate that provider authentication is missing."
+        : "These examples are not a live registry result. Configure/authenticate a provider in Pi, then run `/twins:scan` again.",
+  );
+  return lines.join("\n");
+}
 
 /** Get list of available models. */
 export function scanModels(): ModelEntry[] {
