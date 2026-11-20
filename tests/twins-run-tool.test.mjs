@@ -1,5 +1,17 @@
 import assert from "node:assert/strict";
-import test from "node:test";
+import { mock, test } from "node:test";
+
+let completeModel;
+mock.module("@earendil-works/pi-ai/compat", {
+  exports: {
+    completeSimple: (...args) => completeModel(...args),
+  },
+});
+mock.module("@earendil-works/pi-coding-agent", {
+  exports: {
+    defineTool: (tool) => tool,
+  },
+});
 
 const {
   buildTwinsRunSuccessResult,
@@ -101,6 +113,74 @@ test("twins_run preserves an exact explicit pair name with surrounding spaces", 
 
   assert.equal(result.isError, true);
   assert.deepEqual(modelLookups, ["openai/o3", "google/gemini-2.5-flash"]);
+});
+
+async function runTwinsToolWithFailures(failedModelIds) {
+  const calls = [];
+  completeModel = async (model, params) => {
+    const prompt = params.messages[0].content[0].text;
+    const isSynthesis = prompt.includes("以下の2つの回答");
+    calls.push({ modelId: model.id, isSynthesis });
+
+    if (!isSynthesis && failedModelIds.includes(model.id)) {
+      throw new Error(`${model.id} unavailable`);
+    }
+
+    return {
+      stopReason: "stop",
+      content: [{ type: "text", text: isSynthesis ? `Synthesis by ${model.id}` : `Answer from ${model.id}` }],
+    };
+  };
+
+  const modelRegistry = {
+    find(provider, modelId) {
+      return { provider, id: modelId };
+    },
+    async getApiKeyAndHeaders() {
+      return { ok: true, apiKey: "mock-key" };
+    },
+  };
+  const config = {
+    pairs: { default: ["test/model-a", "test/model-b"] },
+  };
+
+  const result = await executeTwinsRun(
+    { prompt: "question" },
+    new AbortController().signal,
+    modelRegistry,
+    config,
+  );
+
+  return { result, calls };
+}
+
+test("twins_run synthesizes partial results with the responding second model", async () => {
+  const { result, calls } = await runTwinsToolWithFailures(["model-a"]);
+
+  assert.equal(result.isError, undefined);
+  assert.match(result.content[0].text, /Answer from model-b/);
+  assert.match(result.content[0].text, /model-a unavailable/);
+  assert.match(result.content[0].text, /Synthesis by model-b/);
+  assert.deepEqual(calls.filter((call) => call.isSynthesis).map((call) => call.modelId), ["model-b"]);
+});
+
+test("twins_run keeps using the first model when the second model fails", async () => {
+  const { result, calls } = await runTwinsToolWithFailures(["model-b"]);
+
+  assert.equal(result.isError, undefined);
+  assert.match(result.content[0].text, /Answer from model-a/);
+  assert.match(result.content[0].text, /model-b unavailable/);
+  assert.match(result.content[0].text, /Synthesis by model-a/);
+  assert.deepEqual(calls.filter((call) => call.isSynthesis).map((call) => call.modelId), ["model-a"]);
+});
+
+test("twins_run returns the combined error without synthesizing when both models fail", async () => {
+  const { result, calls } = await runTwinsToolWithFailures(["model-a", "model-b"]);
+
+  assert.equal(result.isError, true);
+  assert.match(result.content[0].text, /test\/model-a: model-a unavailable/);
+  assert.match(result.content[0].text, /test\/model-b: model-b unavailable/);
+  assert.equal(calls.some((call) => call.isSynthesis), false);
 });
 
 test("resolveSynthesisOptions merges config defaults with per-call overrides", () => {
