@@ -94,10 +94,11 @@ export async function executeTwinsRun(
       throw new Error(formatBothModelsFailedMessage(result));
     }
 
+    const synthesisModel = result.responseA ? pair[0] : pair[1];
     const synthesis = await synthesizeResponses(
       result,
       modelRegistry,
-      pair[0],
+      synthesisModel,
       signal,
       synthesisOptions,
     );
