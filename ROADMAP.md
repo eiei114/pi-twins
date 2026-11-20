@@ -17,15 +17,16 @@ It is intentionally short, opinionated, and seed-oriented — not a feature wish
 
 | Item | Value |
 |---|---|
-| Repository package version | **0.3.7** (2026-09-30) — Pi SDK 0.99.1 dependency update |
-| Registry status | Not verified from this checkout; do not infer npm freshness from the repository version. |
-| Next maintenance target | **v0.3.8** (patch — completion UX and documentation) |
-| CI | `npm run ci` = typecheck + `node --test` + `npm pack --dry-run` |
+| Repository package version | **0.4.4** (`package.json`) |
+| npm registry freshness | Not checked; do not infer it from the repository version. |
+| Next maintenance target | Choose from the bounded candidates below; no release target is assigned. |
+| CI | `npm run ci` = typecheck + tests + Pi SDK smoke + `npm pack --dry-run` |
 | Release mechanism | npm Trusted Publishing via `auto-release.yml` → `publish.yml` |
 
 **Recent trajectory** (see [`CHANGELOG.md`](CHANGELOG.md) for detail):
 
 - `v0.3.7` — updated the Pi SDK dependencies to 0.99.1.
+- `v0.4.0` — added configurable Japanese/English synthesis language (`CHANGELOG.md`, DOT-2605).
 - `v0.3.0` — added synthesis controls (`balanced`, `decision`, `critique`, `concise`) with bounded instructions (DOT-1436).
 - `v0.2.4` — pruned the scanner catalog and aligned README/docs with the release workflow.
 - `v0.2.0` — added the parallel dual-model runner and Pi synthesis orchestration (`lib/runner.ts`, DOT-224).
@@ -37,6 +38,7 @@ It is intentionally short, opinionated, and seed-oriented — not a feature wish
 - **M-3** — `synthesizeResponses` + `formatTwinsMarkdown` tests (`runner.test.mjs`, #45).
 - **M-4** — Troubleshooting guide covering config, model, Windows spawn, and dual-failure errors (DOT-1750).
 - **M-5** — Interactive pair picker for `/twins:run` (#56).
+- **M-6** — Configurable Japanese/English synthesis prompt language (`schema.ts`, `runner.ts`, DOT-2605).
 - **M-7** — Typed `twins_run` tool return (DOT-1729).
 
 ### Known housekeeping (low priority)
@@ -58,8 +60,9 @@ Priorities, in order:
 1. **Correctness & stability of the twin run.** `/twins:run` and the `twins_run` tool
    must reliably call two models in parallel and synthesize one answer across the
    supported platforms (Windows is a first-class target — see `v0.1.x` history).
-2. **A trustworthy model catalog.** `/twins:scan` must not point users at fictional
-   or stale model IDs. (Current `scanner.ts` is a hardcoded MVP list — see debt below.)
+2. **Useful model discovery.** `/twins:scan` reads Pi's provider registry when it is
+   available. If the registry is empty or unavailable, it clearly labels the curated
+   model list as examples rather than live, verified IDs.
 3. **Small, intentional package surface.** No churn dependencies, no unused files in
    the published tarball (`npm pack --dry-run` must stay clean).
 4. **Documentation that matches behavior.** README, `docs/`, and `CHANGELOG.md` stay
@@ -70,20 +73,12 @@ history, or a hosted service.
 
 ---
 
-## Short-term maintenance goals (next 1–2 releases)
+## Near-term maintenance goals
 
-### v0.3.8 — documentation and small UX cleanup (patch)
-
-Land M-8 or M-9 without changing default twin-run behavior. M-8 is the smallest
-user-visible patch; M-9 is the preferred contributor-facing documentation seed.
-
-### v0.4.0 — synthesis UX (minor)
-
-- Configurable synthesis prompt language (English default, Japanese as an option) (M-6).
-- Any follow-up pair-selection polish should preserve the current picker, single-pair,
-  and `default` behavior; the interactive picker itself is complete (M-5).
-
-These changes should remain additive and opt-in.
+Choose a bounded documentation or maintenance candidate below. These are not tied to
+a package version or release schedule. Synthesis language configuration and the
+interactive pair picker are already implemented; preserve their existing behavior
+when making related changes.
 
 ---
 
@@ -95,9 +90,8 @@ Seeds are tagged by area: `docs` · `tests` · `refactor` · `feature` · `chore
 
 | ID | Title | Area | Est. | Target | Why now |
 |---|---|---|---|---|---|
-| M-6 | Configurable synthesis prompt language (EN default, JA option) | feature | ~60–90m | v0.4.0 | `buildSynthesisPrompt` is always Japanese; English-first configs need an opt-in path. |
-| M-8 | Localize `/twins:run` completion message | chore | ~30m | v0.3.8 | Hardcoded `"完了"` is inconsistent with the package's English-facing documentation. |
-| M-9 | Add `docs/architecture.md` (run → synthesize flow) | docs | ~45–60m | v0.3.8 | New contributors lack a one-page map of `extensions/` → `lib/runner.ts` → synthesis. |
+| M-8 | Localize `/twins:run` completion message | chore | ~30m | next seed | Hardcoded `"完了"` is inconsistent with the package's English-facing documentation. |
+| M-9 | Add `docs/architecture.md` (run → synthesize flow) | docs | ~45–60m | next seed | New contributors lack a one-page map of `extensions/` → `lib/runner.ts` → synthesis. |
 | M-10 | Verify registry/package release freshness before a version bump | chore | ~30m | next seed | Repository metadata and registry state can drift; record the check before planning release work. |
 
 ### Completed: M-4 — Add `docs/troubleshooting.md`
@@ -129,26 +123,12 @@ the Pi UI instead of silently using `names[0]`.
   branch; manual `pi -e .` smoke passes; `npm run ci` green.
 
 
-### M-6 — Configurable synthesis prompt language
-
-`buildSynthesisPrompt` always emits a Japanese synthesis instruction. Make the
-language configurable: default English, Japanese available via a config field
-(e.g. `synthesis.language: ja`). Non-breaking — default behavior changes to EN, so
-gate behind v0.4.0.
-
-- **Why**: Synthesis controls (v0.3.0) added modes/instructions but not locale;
-  English-first users get a Japanese synthesis prompt today.
-- **Acceptance**: `schema.ts` + config loader support a `synthesis.language`
-  option; `buildSynthesisPrompt` honors it; tests for both languages;
-  `docs/examples.md` updated; `npm run ci` green.
-
 ### M-8 — Localize `/twins:run` completion message
 
 Replace the hardcoded `"完了"` completion message in `/twins:run` with a neutral
-English default (or tie it to the same language knob as M-6 if that lands first).
+English default, or tie it to the existing synthesis language setting if appropriate.
 
-- **Why**: Visible UX inconsistency for non-Japanese users; one-line fix unless
-  blocked on M-6's config surface.
+- **Why**: Visible UX inconsistency for non-Japanese users.
 - **Acceptance**: completion message is English by default; `npm run ci` green;
   manual smoke shows the updated string.
 
@@ -167,9 +147,9 @@ README Docs and optionally from CONTRIBUTING.
 
 ## Known technical debt (medium-term, larger than a single seed)
 
-- **Static model discovery.** `scanner.ts` returns a curated list rather than
-  reading Pi's provider registry dynamically (the file says so itself). M-1 keeps
-  the list honest in the short term; a future minor could read models live.
+- **Curated scanner fallback.** When Pi's provider registry is empty or unavailable,
+  `scanner.ts` shows a curated examples list and labels it as unverified. Keep that
+  fallback list accurate and do not present it as a live registry result.
 - **No per-model timeout / retry.** The runner relies entirely on a passed
   `AbortSignal`; there is no per-model timeout or single-retry on transient
   provider errors. Worth a design pass once the current documentation seeds (M-8/M-9) land.
