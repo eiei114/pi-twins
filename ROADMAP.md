@@ -110,19 +110,6 @@ issues (`spawn EINVAL`, child `pi` hangs), and "Both models failed". Link it fro
 - **Acceptance**: `docs/troubleshooting.md` exists and covers all four error
   classes above; README links to it; `npm run ci` green.
 
-### M-5 — Interactive pair picker for `/twins:run`
-
-Today `/twins:run` silently auto-selects `default`, else the first pair. When two
-or more pairs exist and there is no `default`, offer an interactive selection via
-the Pi UI instead of silently using `names[0]`.
-
-- **Why**: `resolvePair` fallback is correct but opaque; users with multiple pairs
-  cannot choose without editing YAML.
-- **Acceptance**: with ≥2 pairs and no `default`, the user can choose; a single
-  pair or a present `default` keeps current behavior; new test for the selection
-  branch; manual `pi -e .` smoke passes; `npm run ci` green.
-
-
 ### M-8 — Localize `/twins:run` completion message
 
 Replace the hardcoded `"完了"` completion message in `/twins:run` with a neutral
