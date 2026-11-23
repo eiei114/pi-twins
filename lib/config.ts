@@ -68,12 +68,23 @@ function validateSynthesisConfigDetails(configPath: string, parsed: unknown): vo
     );
   }
 
-  if (typeof mode === "string" && !(SYNTHESIS_MODES as readonly string[]).includes(mode)) {
+  if (mode !== undefined) {
+    if (typeof mode !== "string") {
+      throw new Error(formatValidationError(configPath, `expected "synthesis.mode" to be a string`));
+    }
+    if (!(SYNTHESIS_MODES as readonly string[]).includes(mode)) {
+      throw new Error(
+        formatValidationError(
+          configPath,
+          `expected "synthesis.mode" to be one of: ${SYNTHESIS_MODES.join(", ")}`,
+        ),
+      );
+    }
+  }
+
+  if (instructions !== undefined && typeof instructions !== "string") {
     throw new Error(
-      formatValidationError(
-        configPath,
-        `expected "synthesis.mode" to be one of: ${SYNTHESIS_MODES.join(", ")}`,
-      ),
+      formatValidationError(configPath, `expected "synthesis.instructions" to be a string`),
     );
   }
 

@@ -145,6 +145,10 @@ test("loadConfig reads and validates YAML config", async () => {
       "anthropic/claude-sonnet-4",
       "google/gemini-2.5-pro",
     ]);
+    assert.equal(config.synthesis, undefined);
+  });
+  await withTempConfig(`${yaml}synthesis: {}\n`, async (configPath) => {
+    assert.deepEqual(loadConfig(configPath).synthesis, {});
   });
 });
 
@@ -158,6 +162,7 @@ test("loadConfig rejects an incomplete pair with a repair path", async () => {
       () => loadConfig(configPath),
       (error) => {
         assert.match(error.message, /Invalid pi-twins config/);
+        assert.match(error.message, /expected a "pairs" object/);
         assert.match(error.message, /\/twins:scan/);
         assert.ok(error.message.includes(`update ${configPath}`));
         assert.doesNotMatch(error.message, /~\/\.pi\/twins\.yaml/);
@@ -176,7 +181,7 @@ synthesis:
   mode: verbose
 `;
   await withTempConfig(invalidMode, async (configPath) => {
-    assert.throws(() => loadConfig(configPath), /synthesis\.mode/);
+    assert.throws(() => loadConfig(configPath), /expected "synthesis\.mode" to be one of:/);
   });
 
   const invalidLanguage = `pairs:
@@ -198,9 +203,29 @@ synthesis:
   instructions: ${"x".repeat(SYNTHESIS_INSTRUCTIONS_MAX_LENGTH + 1)}
 `;
   await withTempConfig(overlongInstructions, async (configPath) => {
-    assert.throws(() => loadConfig(configPath), /synthesis\.instructions/);
+    assert.throws(
+      () => loadConfig(configPath),
+      new RegExp(`expected "synthesis\\.instructions" to be ${SYNTHESIS_INSTRUCTIONS_MAX_LENGTH} characters or fewer`),
+    );
   });
 });
+
+for (const [field, value] of [["mode", "true"], ["instructions", "[review, summarize]"]]) {
+  test(`loadConfig reports the expected type for synthesis.${field}`, async () => {
+    const yaml = `pairs:
+  default:
+    - anthropic/claude-sonnet-4
+    - google/gemini-2.5-pro
+synthesis:
+  ${field}: ${value}
+`;
+    await withTempConfig(yaml, async (configPath) => {
+      assert.throws(() => loadConfig(configPath), {
+        message: `Invalid pi-twins config at ${configPath}: expected "synthesis.${field}" to be a string`,
+      });
+    });
+  });
+}
 
 test("getPair returns named pair from config", async () => {
   const yaml = `pairs:
