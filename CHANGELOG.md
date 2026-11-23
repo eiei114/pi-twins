@@ -6,6 +6,10 @@ This project follows semantic versioning.
 
 ## Unreleased
 
+### Fixed
+
+- Report the offending field when `synthesis.mode` or `synthesis.instructions` is not a string, instead of suggesting changes to model pairs (DOT-4178).
+
 ### Changed
 
 - Update the Pi SDK development dependencies to 1.5.2, refresh the curated Pi SDK smoke report and re-verify the actual Pi host behavior (DOT-3877).
