@@ -152,6 +152,17 @@ test("loadConfig reads and validates YAML config", async () => {
   });
 });
 
+test("loadConfig rejects an empty pairs map with a repair path", async () => {
+  await withTempConfig("pairs: {}\n", async (configPath) => {
+    assert.throws(() => loadConfig(configPath), (error) => {
+      assert.ok(error.message.startsWith(`Invalid pi-twins config at ${configPath}:`));
+      assert.match(error.message, /at least one named two-model pair/);
+      assert.match(error.message, /\/twins:scan/);
+      return true;
+    });
+  });
+});
+
 test("loadConfig rejects an incomplete pair with a repair path", async () => {
   const yaml = `pairs:
   default:
