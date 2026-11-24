@@ -127,6 +127,15 @@ export function loadConfig(configPath?: string): TwinsConfig {
     );
   }
 
+  if (Object.keys(parsed.pairs).length === 0) {
+    throw new Error(
+      formatValidationError(
+        path,
+        '"pairs" requires at least one named two-model pair. Run /twins:scan to find provider/model IDs, then add two IDs under a pair name in "pairs".',
+      ),
+    );
+  }
+
   return parsed;
 }
 
