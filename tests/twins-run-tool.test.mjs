@@ -13,6 +13,13 @@ mock.module("@earendil-works/pi-coding-agent", {
   },
 });
 
+const loadConfig = mock.fn(() => ({
+  pairs: { default: ["test/model-a", "test/model-b"] },
+}));
+mock.module("../lib/config.ts", {
+  exports: { ...await import("../lib/config.ts"), loadConfig },
+});
+
 const {
   buildTwinsRunSuccessResult,
   buildTwinsRunErrorResult,
@@ -65,6 +72,22 @@ test("buildTwinsRunErrorResult surfaces pair-resolution failure messaging", () =
   );
   assert.deepEqual(toolResult.details, { error: true });
 });
+
+for (const [label, prompt] of [["empty", ""], ["whitespace-only", " \t\n"]]) {
+  test(`twins_run rejects ${label} prompts before config or model lookup`, async () => {
+    loadConfig.mock.resetCalls();
+    const find = mock.fn();
+    const result = await executeTwinsRun({ prompt }, undefined, { find });
+
+    assert.equal(find.mock.callCount(), 0);
+    assert.equal(loadConfig.mock.callCount(), 0);
+    assert.deepEqual(result, {
+      content: [{ type: "text", text: "pi-twins error: Provide a nonblank prompt for twins_run." }],
+      details: { error: true },
+      isError: true,
+    });
+  });
+}
 
 test("twins_run returns an unknown-pair error without calling any model", async () => {
   const modelLookups = [];

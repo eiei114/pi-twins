@@ -85,6 +85,10 @@ export async function executeTwinsRun(
   config?: TwinsConfig,
 ): Promise<TwinsRunToolResult> {
   try {
+    if (!params.prompt.trim()) {
+      return buildTwinsRunErrorResult("Provide a nonblank prompt for twins_run.");
+    }
+
     const resolvedConfig = config ?? loadConfig();
     const pair = resolvePair(resolvedConfig, params.pair);
     const synthesisOptions = resolveSynthesisOptions(resolvedConfig, params);
