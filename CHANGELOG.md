@@ -8,6 +8,7 @@ This project follows semantic versioning.
 
 ### Fixed
 
+- Reject empty or whitespace-only `twins_run` prompts before loading configuration or contacting models (DOT-4319).
 - Report the offending field when `synthesis.mode` or `synthesis.instructions` is not a string, instead of suggesting changes to model pairs (DOT-4178).
 
 ### Changed

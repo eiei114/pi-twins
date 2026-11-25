@@ -64,6 +64,8 @@ Agents can call the tool directly:
 }
 ```
 
+Provide a nonblank `prompt`. Empty and whitespace-only prompts are rejected before loading configuration or contacting models.
+
 `pair` is optional. When omitted, pi-twins uses the `default` pair when present; otherwise it uses the first configured pair.
 
 Override synthesis defaults for one tool call:
